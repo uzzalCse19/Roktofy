@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib import admin
-from core.models import BloodRequest,Donation
+from core.models import BloodRequest,Donation,BloodEvent
 
 @admin.register(BloodRequest)
 class BloodRequestAdmin(admin.ModelAdmin):
@@ -19,4 +19,12 @@ class DonationAdmin(admin.ModelAdmin):
      date_hierarchy = 'donation_date'
      ordering = ('-donation_date',)
 
+@admin.register(BloodEvent)
+class BloodEventAdmin(admin.ModelAdmin):
+    list_display = ('creator', 'blood_group', 'required_date', 'created_at')
+    list_filter = ('blood_group', 'required_date')
+    search_fields = ('creator__email', 'message')
+    filter_horizontal = ('accepted_by',)  # For ManyToMany field in admin
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
 
