@@ -86,6 +86,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'roktofy.wsgi.app'
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173'
+]
+
 INTERNAL_IPS = [
     # ...
     "127.0.0.1",
