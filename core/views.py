@@ -26,12 +26,16 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
     filterset_class = BloodRequestFilter
     pagination_class = BloodRequestPagination
     permission_classes = [IsVerifiedUser, CanRequestBlood]
+    lookup_field = 'pk'
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return BloodRequest.objects.none()
         queryset = super().get_queryset()
         if not self.request.user.is_staff:
             queryset = queryset.filter(requester=self.request.user)
         return queryset.select_related('requester')
+
 
     @action(detail=True, methods=['post'], permission_classes=[IsVerifiedUser, CanDonateBlood])
     def accept(self, request, pk=None):
@@ -66,8 +70,11 @@ class DonationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsVerifiedUser]
     filterset_fields = ['is_verified', 'request__status']
     search_fields = ['donor__email', 'request__blood_group']
+    lookup_field = 'pk'
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Donation.objects.none()
         queryset = Donation.objects.select_related(
             'donor',
             'request',
@@ -178,7 +185,10 @@ class PaymentPlaceholderView(APIView):
 class BloodEventViewSet(viewsets.ModelViewSet):
     serializer_class = BloodEventSerializer
     permission_classes = [IsAuthenticated, IsVerifiedUser]
+
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return BloodEvent.objects.none()
         return BloodEvent.objects.exclude(creator=self.request.user)
 
     def perform_create(self, serializer):

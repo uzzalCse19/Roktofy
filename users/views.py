@@ -36,9 +36,16 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated, IsVerifiedUser]
     lookup_field = 'pk'
+
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return UserProfile.objects.none()
+
+        if not hasattr(self.request, 'user') or not self.request.user.is_authenticated:
+            return UserProfile.objects.none()
+
         return UserProfile.objects.filter(user=self.request.user)
-    
+
     def create(self, request, *args, **kwargs):
         if hasattr(request.user, 'profile'):
             return Response(
@@ -46,9 +53,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         return super().create(request, *args, **kwargs)
-    
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 
 class PublicDonorListView(generics.ListAPIView):
     """
