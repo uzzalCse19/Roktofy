@@ -189,6 +189,9 @@ SIMPLE_JWT = {
  }
 
 DJOSER = {
+    'EMAIL_FRONTEND_PROTOCOL':config('FRONTED_PROTOCOL'),
+    'EMAIL_FRONTEND_DOMAIN':config('FRONTED_DOMAIN'),
+    'EMAIL_FRONTEND_SITE_NAME':'Roktofy',
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': True,
