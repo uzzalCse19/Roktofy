@@ -84,7 +84,6 @@ class DonorListView(generics.ListAPIView):
     def get_queryset(self):
         return User.objects.filter(
             is_available=True,
-            is_verified=True,
             profile__blood_group__isnull=False
         ).select_related('profile').only(
             'id', 'first_name', 'last_name', 'email', 'address', 
