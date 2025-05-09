@@ -197,7 +197,7 @@ DJOSER = {
     'SEND_ACTIVATION_EMAIL': True,
      'SERIALIZERS': {
         'user_create': 'users.serializers.UserCreateSerializer',
-        'current_user': 'users.serializers.UserSerializer'
+        'current_user': 'users.serializers.UserProfileSerializer'
      },
     #     'DEFAULT_PERMISSION_CLASSES': [
     #     'rest_framework.permissions.IsAuthenticated',
