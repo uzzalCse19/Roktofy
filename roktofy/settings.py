@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'djoser',
     "debug_toolbar",
     'core',
-    'users.apps.UsersConfig', 
+    'users',
     
 ]
 
@@ -197,7 +197,7 @@ DJOSER = {
     'SEND_ACTIVATION_EMAIL': True,
      'SERIALIZERS': {
         'user_create': 'users.serializers.UserCreateSerializer',
-        'current_user': 'users.serializers.UserProfileSerializer'
+        'current_user': 'users.serializers.UserSerializer'
      },
     #     'DEFAULT_PERMISSION_CLASSES': [
     #     'rest_framework.permissions.IsAuthenticated',
