@@ -20,6 +20,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from users.filters import DonorFilter
 from users.serializers import DonorListSerializer
+from django.db.models import Q
 
 User = get_user_model()
 
@@ -74,22 +75,27 @@ class RequestBloodView(generics.CreateAPIView):
     def perform_create(self, serializer):
         serializer.save(requester=self.request.user)
 
+
 class DonorListView(generics.ListAPIView):
     serializer_class = DonorListSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = DonorFilter
     ordering_fields = ['last_donation_date', 'profile__blood_group', 'first_name']
-    ordering = ['-last_donation_date'] 
+    ordering = ['-last_donation_date']
     search_fields = ['first_name', 'last_name', 'email', 'address']
+
     def get_queryset(self):
         return User.objects.filter(
             is_available=True,
             profile__blood_group__isnull=False
+        ).filter(
+            Q(user_type='donor') | Q(user_type='both')
         ).select_related('profile').only(
             'id', 'first_name', 'last_name', 'email', 'address', 
             'last_donation_date', 'is_available',
             'profile__blood_group'
         )
+
 
 
 
