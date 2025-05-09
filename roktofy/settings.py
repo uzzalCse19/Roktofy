@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'djoser',
     "debug_toolbar",
     'core',
-    'users',
+    'users.apps.UsersConfig', 
     
 ]
 
