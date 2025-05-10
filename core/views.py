@@ -179,7 +179,8 @@ class PaymentPlaceholderView(APIView):
 
 class BloodEventViewSet(viewsets.ModelViewSet):
     serializer_class = BloodEventSerializer
-    permission_classes = [IsAuthenticated, IsVerifiedUser]
+    permission_classes = [IsAuthenticated] 
+
     def get_queryset(self):
         return BloodEvent.objects.exclude(creator=self.request.user)
 
