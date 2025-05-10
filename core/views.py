@@ -8,7 +8,6 @@ from core.serializers import BloodRequestSerializer,DonationSerializer,BloodEven
 from core.filters import BloodRequestFilter
 from core.paginations import BloodRequestPagination
 from core.permissions import CanRequestBlood, CanDonateBlood
-from users.permissions import IsVerifiedUser
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
@@ -16,6 +15,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
+from rest_framework import permissions
+
 
 User = get_user_model()
 
@@ -25,7 +26,7 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = BloodRequestFilter
     pagination_class = BloodRequestPagination
-    permission_classes = [IsVerifiedUser, CanRequestBlood]
+    permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'pk'
 
     def get_queryset(self):
@@ -34,7 +35,7 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(requester=self.request.user)
         return queryset.select_related('requester')
 
-    @action(detail=True, methods=['post'], permission_classes=[IsVerifiedUser, CanDonateBlood])
+    @action(detail=True, methods=['post'], permission_classes = [permissions.IsAuthenticated])
     def accept(self, request, pk=None):
         blood_request = self.get_object()
         donor = request.user

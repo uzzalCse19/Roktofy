@@ -30,7 +30,7 @@ class UserViewSet(viewsets.ModelViewSet):
     pagination_class = UserPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserFilter
-    permission_classes = [IsAuthenticated, IsVerifiedUser]
+    permission_classes = [IsAuthenticated]
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):

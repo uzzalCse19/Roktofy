@@ -38,7 +38,7 @@ class Donation(models.Model):
     request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='donations')
     donation_date = models.DateTimeField(auto_now_add=True)
     units_donated = models.PositiveIntegerField(default=1)
-    is_verified = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.donor.email} donated {self.units_donated} unit(s)"
