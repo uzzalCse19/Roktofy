@@ -36,7 +36,7 @@ class User(AbstractUser):
     age = models.PositiveIntegerField(validators=[MinValueValidator(18), MaxValueValidator(100)])
     last_donation_date = models.DateField(null=True, blank=True)
     is_available = models.BooleanField(default=True)
-    is_verified = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=True)
 
     objects = CustomUserManager()
     USERNAME_FIELD = 'email'
