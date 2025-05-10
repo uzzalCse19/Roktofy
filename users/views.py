@@ -35,7 +35,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated, IsVerifiedUser]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'pk'
     def get_queryset(self):
         return UserProfile.objects.filter(user=self.request.user)
