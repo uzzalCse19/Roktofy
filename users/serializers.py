@@ -29,7 +29,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             age=validated_data.get('age', 18),
             last_donation_date=validated_data.get('last_donation_date', None),
             is_available=validated_data.get('is_available', True),
-            is_verified=validated_data.get('is_verified', False)
+            is_verified=validated_data.get('is_verified', True)
         )
         UserProfile.objects.create(user=user)
         return user

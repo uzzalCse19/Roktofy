@@ -64,8 +64,8 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
 
 class DonationViewSet(viewsets.ModelViewSet):
     serializer_class = DonationSerializer
-    permission_classes = [IsVerifiedUser]
-    filterset_fields = ['is_verified', 'request__status']
+    permission_classes = [IsAuthenticated] 
+    filterset_fields = ['request__status']
     search_fields = ['donor__email', 'request__blood_group']
     lookup_field = 'pk'
 
