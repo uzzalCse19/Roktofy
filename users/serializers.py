@@ -15,10 +15,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
-            'id', 'email', 'phone', 'user_type', 'blood_group',
+            'id', 'email', 'phone', 'user_type', 'blood_type',
             'health_conditions', 'avatar', 'is_available'
         ]
-    def validate_blood_group(self, value):
+    def validate_blood_type(self, value):
         valid_groups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
         if value and value not in valid_groups:
             raise serializers.ValidationError("Invalid blood group")
@@ -38,15 +38,15 @@ class UserSerializer(BaseUserSerializer):
                   'last_name', 'address', 'phone']
 
 class PublicDonorSerializer(serializers.ModelSerializer):
-    blood_group = serializers.CharField(source='profile.blood_group')
+    blood_type = serializers.CharField(source='profile.blood_type')
     avatar = serializers.ImageField(source='profile.avatar', allow_null=True)
     class Meta:
         model = User
-        fields = ['id', 'email', 'phone', 'address', 'age', 'blood_group', 'avatar']
+        fields = ['id', 'email', 'phone', 'address', 'age', 'blood_type', 'avatar']
 
 class BloodRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    blood_group = serializers.CharField(max_length=5)
+    blood_type = serializers.CharField(max_length=5)
     message = serializers.CharField(max_length=500)
     required_date = serializers.DateField()
 
@@ -54,11 +54,11 @@ class BloodRequestSerializer(serializers.Serializer):
         ref_name = "UserBloodRequest"  
 
 class DonorListSerializer(serializers.ModelSerializer):
-    blood_group = serializers.CharField(source='profile.blood_group')
+    blood_type = serializers.CharField(source='profile.blood_type')
     full_name = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ['id', 'full_name', 'email', 'blood_group','address','last_donation_date','is_available']
+        fields = ['id', 'full_name', 'email', 'blood_type','address','last_donation_date','is_available']
     def get_full_name(self, obj):
         name = f"{obj.first_name or ''} {obj.last_name or ''}".strip()
         return name if name else obj.email

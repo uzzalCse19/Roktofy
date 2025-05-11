@@ -14,7 +14,7 @@ class BloodRequestSerializer(serializers.ModelSerializer):
         model = BloodRequest
         fields = [
             'id', 'requester', 'requester_email', 'requester_phone',
-            'blood_group', 'units_needed', 'hospital', 'location',
+            'blood_type', 'units_needed', 'hospital', 'location',
             'urgency', 'additional_info', 'status', 'created_at', 'needed_by'
         ]
         extra_kwargs = {
@@ -30,7 +30,7 @@ class BloodRequestSerializer(serializers.ModelSerializer):
         if value < 1:
             raise serializers.ValidationError("At least 1 unit is required.")
         return value
-    def validate_blood_group(self, value):
+    def validate_blood_type(self, value):
         valid_groups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
         if value not in valid_groups:
             raise serializers.ValidationError("Invalid blood group.")
@@ -39,7 +39,7 @@ class BloodRequestSerializer(serializers.ModelSerializer):
 class DonationSerializer(serializers.ModelSerializer):
     donor_email = serializers.EmailField(source='donor.email', read_only=True)
     donor_phone = serializers.CharField(source='donor.phone', read_only=True)
-    request_blood_group = serializers.CharField(source='request.blood_group', read_only=True)
+    request_blood_type = serializers.CharField(source='request.blood_type', read_only=True)
     request_hospital = serializers.CharField(source='request.hospital', read_only=True)
     donation_date = serializers.DateTimeField(read_only=True)
 
@@ -47,7 +47,7 @@ class DonationSerializer(serializers.ModelSerializer):
         model = Donation
         fields = [
             'id', 'donor', 'donor_email', 'donor_phone', 'request',
-            'request_blood_group', 'request_hospital', 'units_donated',
+            'request_blood_type', 'request_hospital', 'units_donated',
             'donation_date', 'is_verified'
         ]
         extra_kwargs = {
@@ -66,7 +66,7 @@ class BloodEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BloodEvent
-        fields = ['id', 'blood_group', 'message', 'required_date', 'creator', 'accepted_by', 'created_at']
+        fields = ['id', 'blood_type', 'message', 'required_date', 'creator', 'accepted_by', 'created_at']
         read_only_fields = ['creator', 'accepted_by', 'created_at']
 
 

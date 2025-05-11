@@ -8,7 +8,7 @@ from cloudinary.models import CloudinaryField
 from uuid import uuid4
 
 
-BLOOD_GROUP_CHOICES = [
+blood_type_CHOICES = [
     ('O+', 'O+'), ('O-', 'O-'),
     ('A+', 'A+'), ('A-', 'A-'),
     ('B+', 'B+'), ('B-', 'B-'),
@@ -48,7 +48,7 @@ class User(AbstractUser):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUP_CHOICES, null=True, blank=True)
+    blood_type = models.CharField(max_length=3, choices=blood_type_CHOICES, null=True, blank=True)
     health_conditions = models.TextField(blank=True)
     # avatar = models.ImageField(upload_to=upload_avatar_path, null=True, blank=True)
     avatar = CloudinaryField('image', null=True, blank=True)

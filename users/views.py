@@ -58,7 +58,7 @@ class PublicDonorListView(generics.ListAPIView):
         user_type__in=['donor', 'both'],
         is_verified=True,
         is_available=True,
-        profile__blood_group__isnull=False
+        profile__blood_type__isnull=False
         ).select_related('profile')
     serializer_class = PublicDonorSerializer
     permission_classes = [permissions.AllowAny]  
@@ -79,20 +79,20 @@ class DonorListView(generics.ListAPIView):
     serializer_class = DonorListSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = DonorFilter
-    ordering_fields = ['last_donation_date', 'profile__blood_group', 'first_name']
+    ordering_fields = ['last_donation_date', 'profile__blood_type', 'first_name']
     ordering = ['-last_donation_date']
     search_fields = ['first_name', 'last_name', 'email', 'address']
 
     def get_queryset(self):
         return User.objects.filter(
             is_available=True,
-            profile__blood_group__isnull=False
+            profile__blood_type__isnull=False
         ).filter(
             Q(user_type='donor') | Q(user_type='both')
         ).select_related('profile').only(
             'id', 'first_name', 'last_name', 'email', 'address', 
             'last_donation_date', 'is_available',
-            'profile__blood_group'
+            'profile__blood_type'
         )
 
 

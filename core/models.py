@@ -4,7 +4,7 @@ from users.models import User
 from django.conf import settings
 
 
-BLOOD_GROUP_CHOICES = [
+blood_type_CHOICES = [
     ('O+', 'O+'), ('O-', 'O-'),
     ('A+', 'A+'), ('A-', 'A-'),
     ('AB+', 'AB+'), ('AB-', 'AB-'),
@@ -17,7 +17,7 @@ class BloodRequest(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blood_requests')
-    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUP_CHOICES)
+    blood_type = models.CharField(max_length=3, choices=blood_type_CHOICES)
     units_needed = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     hospital = models.CharField(max_length=255)
     location = models.CharField(max_length=255)
@@ -28,7 +28,7 @@ class BloodRequest(models.Model):
     needed_by = models.DateTimeField()
     
     def __str__(self):
-        return f"Request for {self.blood_group} by {self.requester.email}"
+        return f"Request for {self.blood_type} by {self.requester.email}"
     class Meta:
         ordering = ['-created_at']
 
@@ -49,7 +49,7 @@ class Donation(models.Model):
 
 
 class BloodEvent(models.Model):
-    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUP_CHOICES)
+    blood_type = models.CharField(max_length=3, choices=blood_type_CHOICES)
     message = models.TextField(blank=True,null=True)
     required_date = models.DateField()
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_events')
@@ -57,4 +57,4 @@ class BloodEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.creator.email} needs {self.blood_group} on {self.required_date}"
+        return f"{self.creator.email} needs {self.blood_type} on {self.required_date}"

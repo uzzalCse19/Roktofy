@@ -4,8 +4,8 @@ from core.models import BloodRequest,Donation,BloodEvent
 
 @admin.register(BloodRequest)
 class BloodRequestAdmin(admin.ModelAdmin):
-    list_display = ('requester', 'blood_group', 'status', 'urgency', 'needed_by', 'created_at')
-    list_filter = ('status', 'urgency', 'blood_group')
+    list_display = ('requester', 'blood_type', 'status', 'urgency', 'needed_by', 'created_at')
+    list_filter = ('status', 'urgency', 'blood_type')
     search_fields = ('requester__email', 'hospital')
     readonly_fields = ('created_at',)
     date_hierarchy = 'created_at'
@@ -21,8 +21,8 @@ class DonationAdmin(admin.ModelAdmin):
 
 @admin.register(BloodEvent)
 class BloodEventAdmin(admin.ModelAdmin):
-    list_display = ('creator', 'blood_group', 'required_date', 'created_at')
-    list_filter = ('blood_group', 'required_date')
+    list_display = ('creator', 'blood_type', 'required_date', 'created_at')
+    list_filter = ('blood_type', 'required_date')
     search_fields = ('creator__email', 'message')
     filter_horizontal = ('accepted_by',)  # For ManyToMany field in admin
     date_hierarchy = 'created_at'

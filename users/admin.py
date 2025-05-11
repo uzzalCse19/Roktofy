@@ -6,23 +6,23 @@ class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
     verbose_name_plural = 'Profile'
-    fields = ('blood_group', 'health_conditions', 'avatar')
+    fields = ('blood_type', 'health_conditions', 'avatar')
 
 class CustomUserAdmin(UserAdmin):
     inlines = (UserProfileInline,)
     list_display = ('email', 'phone', 'user_type', 'is_available', 'is_verified', 'age', 'last_donation_date')
     list_filter = ('user_type', 'is_available', 'is_verified')
 
-    def blood_group(self, obj):
-        return obj.profile.blood_group if hasattr(obj, 'profile') else None
-    blood_group.short_description = 'Blood Group'
+    def blood_type(self, obj):
+        return obj.profile.blood_type if hasattr(obj, 'profile') else None
+    blood_type.short_description = 'Blood Group'
       
     def avatar(self, obj):
         if hasattr(obj, 'profile') and obj.profile.avatar:
             return obj.profile.avatar.url
         return None
     avatar.short_description = 'Avatar'
-    list_display += ('blood_group', 'avatar')
+    list_display += ('blood_type', 'avatar')
     fieldsets = (
         (None, {'fields': ('email', 'password')}), 
         ('Personal info', {'fields': ('phone', 'address', 'age', 'last_donation_date')}), 

@@ -43,7 +43,7 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
             return Response(
                 {'error': 'You are not currently available to donate'},status=status.HTTP_400_BAD_REQUEST)
 
-        if donor.profile.blood_group != blood_request.blood_group:
+        if donor.profile.blood_type != blood_request.blood_type:
             return Response({'error': 'Blood group mismatch'}, status=status.HTTP_400_BAD_REQUEST)
 
         if blood_request.status == 'accepted':
@@ -67,7 +67,7 @@ class DonationViewSet(viewsets.ModelViewSet):
     serializer_class = DonationSerializer
     permission_classes = [IsAuthenticated] 
     filterset_fields = ['request__status']
-    search_fields = ['donor__email', 'request__blood_group']
+    search_fields = ['donor__email', 'request__blood_type']
     lookup_field = 'pk'
 
     def get_queryset(self):
@@ -102,8 +102,8 @@ class DashboardView(APIView):
         user = request.user
         dashboard = {}
         profile = getattr(user, 'profile', None)
-        blood_group = profile.blood_group if profile else None
-        dashboard['blood_group'] = blood_group
+        blood_type = profile.blood_type if profile else None
+        dashboard['blood_type'] = blood_type
         if user.user_type in ['recipient', 'both']:
             recipient_data = BloodRequest.objects.filter(
                 requester=user
@@ -115,7 +115,7 @@ class DashboardView(APIView):
                 many=True
             ).data
 
-        if user.user_type in ['donor', 'both'] and blood_group:
+        if user.user_type in ['donor', 'both'] and blood_type:
             donations = Donation.objects.filter(
                 donor=user
             ).select_related(
@@ -135,7 +135,7 @@ class DashboardView(APIView):
             dashboard['available_requests'] = BloodRequestSerializer(
                 BloodRequest.objects.filter(
                     status='pending',
-                    blood_group=blood_group
+                    blood_type=blood_type
                 ).exclude(requester=user).select_related('requester')[:10], 
                 many=True
             ).data
@@ -156,7 +156,7 @@ class DashboardView(APIView):
                 Donation.objects.create(
                     donor=user,
                     recipient=blood_request.requester,
-                    blood_group=blood_request.blood_group,
+                    blood_type=blood_request.blood_type,
                     request=blood_request,
                     status='accepted'
                 )
