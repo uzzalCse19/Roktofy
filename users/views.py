@@ -13,7 +13,6 @@ from users.serializers import PublicDonorSerializer, BloodRequestSerializer
 from core.models import BloodRequest  # adjust path as needed
 from django.shortcuts import render
 from rest_framework_simplejwt.views import TokenObtainPairView
-from users.serializers import UserRegistrationSerializer, CustomTokenObtainPairSerializer
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
