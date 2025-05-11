@@ -25,12 +25,38 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return value
     
 
+# class UserCreateSerializer(BaseUserCreateSerializer):
+#     class Meta(BaseUserCreateSerializer.Meta):
+#         fields = [
+#             'id', 'email', 'password', 'first_name', 'last_name',
+#             'address', 'phone', 'age', 'user_type'
+#         ]
+blood_type_CHOICES = [
+    ('O+', 'O+'), ('O-', 'O-'),
+    ('A+', 'A+'), ('A-', 'A-'),
+    ('B+', 'B+'), ('B-', 'B-'),
+    ('AB+', 'AB+'), ('AB-', 'AB-'),
+]
 class UserCreateSerializer(BaseUserCreateSerializer):
+    blood_type = serializers.ChoiceField(choices=blood_type_CHOICES, required=False)
+    
     class Meta(BaseUserCreateSerializer.Meta):
         fields = [
             'id', 'email', 'password', 'first_name', 'last_name',
-            'address', 'phone', 'age', 'user_type'
+            'address', 'phone', 'age', 'user_type', 'blood_type'
         ]
+    
+    def create(self, validated_data):
+        # Extract blood_type from the validated data
+        blood_type = validated_data.pop('blood_type', None)
+        
+        # Create the user first
+        user = super().create(validated_data)
+        
+        # Then create the UserProfile with the blood_type
+        UserProfile.objects.create(user=user, blood_type=blood_type)
+        
+        return user
 class UserSerializer(BaseUserSerializer):
     class Meta(BaseUserSerializer.Meta):
         ref_name = 'CustomUser'
