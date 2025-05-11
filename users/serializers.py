@@ -64,7 +64,27 @@ class DonorListSerializer(serializers.ModelSerializer):
         return name if name else obj.email
 
 
+class CustomUserCreateSerializer(BaseUserCreateSerializer):
+    blood_type = serializers.ChoiceField(choices=UserProfile._meta.get_field('blood_type').choices, required=False)
 
+    class Meta(BaseUserCreateSerializer.Meta):
+        model = User
+        fields = (
+            'id', 'email', 'password', 'phone', 'age', 'address', 'user_type', 
+            'first_name', 'last_name', 'blood_type'
+        )
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        blood_type = validated_data.pop('blood_type', None)
+
+        # Create User instance
+        user = super().create(validated_data)
+
+        # Create associated UserProfile with blood_type
+        UserProfile.objects.create(user=user, blood_type=blood_type)
+
+        return user
 
 
 
