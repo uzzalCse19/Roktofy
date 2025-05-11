@@ -33,7 +33,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=15, unique=True, validators=[validate_phone_number])
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='both')
     address = models.TextField()
-    age = models.PositiveIntegerField(validators=[MinValueValidator(18), MaxValueValidator(100)])
+    age = models.PositiveIntegerField(validators=[MinValueValidator(18), MaxValueValidator(100)],null=True,blank=True)
     last_donation_date = models.DateField(null=True, blank=True)
     is_available = models.BooleanField(default=True)
     is_verified = models.BooleanField(default=True)
