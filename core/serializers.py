@@ -4,6 +4,11 @@ from users.models import User
 from django.utils import timezone
 from datetime import timedelta
 
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework import serializers
+from .models import BloodRequest
+
 class BloodRequestSerializer(serializers.ModelSerializer):
     requester_email = serializers.EmailField(source='requester.email', read_only=True)
     requester_phone = serializers.CharField(source='requester.phone', read_only=True)
@@ -22,19 +27,37 @@ class BloodRequestSerializer(serializers.ModelSerializer):
             'needed_by': {'required': True},
             'urgency': {'default': 'normal'}
         }
+
     def validate_needed_by(self, value):
         if value < timezone.now() + timedelta(hours=1):
             raise serializers.ValidationError("Needed by time must be at least 1 hour from now.")
         return value
+
     def validate_units_needed(self, value):
         if value < 1:
             raise serializers.ValidationError("At least 1 unit is required.")
         return value
+
     def validate_blood_type(self, value):
         valid_groups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
         if value not in valid_groups:
             raise serializers.ValidationError("Invalid blood group.")
         return value
+
+    def validate(self, attrs):
+        """
+        Ensure user hasn't submitted a request in the last 90 days.
+        """
+        user = self.context['request'].user
+        last_request = BloodRequest.objects.filter(requester=user).order_by('-created_at').first()
+        if last_request:
+            days_since = (timezone.now() - last_request.created_at).days
+            if days_since < 90:
+                raise serializers.ValidationError(
+                    f"You must wait at least 90 days between requests. Please wait {90 - days_since} more day(s)."
+                )
+        return attrs
+
 
 class DonationSerializer(serializers.ModelSerializer):
     donor_email = serializers.EmailField(source='donor.email', read_only=True)
