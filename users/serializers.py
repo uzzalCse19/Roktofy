@@ -25,51 +25,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return value
     
 
-# class UserCreateSerializer(BaseUserCreateSerializer):
-#     class Meta(BaseUserCreateSerializer.Meta):
-#         fields = [
-#             'id', 'email', 'password', 'first_name', 'last_name',
-#             'address', 'phone', 'age', 'user_type'
-#         ]
-blood_type_CHOICES = [
-    ('O+', 'O+'), ('O-', 'O-'),
-    ('A+', 'A+'), ('A-', 'A-'),
-    ('B+', 'B+'), ('B-', 'B-'),
-    ('AB+', 'AB+'), ('AB-', 'AB-'),
-]
-
 class UserCreateSerializer(BaseUserCreateSerializer):
-    blood_type = serializers.ChoiceField(choices=blood_type_CHOICES, required=False)
-
     class Meta(BaseUserCreateSerializer.Meta):
         fields = [
             'id', 'email', 'password', 'first_name', 'last_name',
-            'address', 'phone', 'user_type', 'blood_type'
+            'address', 'phone', 'age', 'user_type'
         ]
-
-    def create(self, validated_data):
-        # Extract blood_type safely
-        blood_type = validated_data.pop('blood_type', None)
-
-        # Create the user (User model)
-        user = super().create(validated_data)
-
-        # Check if UserProfile already exists
-        user_profile, created = UserProfile.objects.get_or_create(user=user)
-
-        # If the UserProfile exists, update the blood_type
-        if not created and blood_type:
-            user_profile.blood_type = blood_type
-            user_profile.save()
-
-        # If blood_type is provided and UserProfile was created, save it
-        if created and blood_type:
-            user_profile.blood_type = blood_type
-            user_profile.save()
-
-        return user
-
-
 class UserSerializer(BaseUserSerializer):
     class Meta(BaseUserSerializer.Meta):
         ref_name = 'CustomUser'
