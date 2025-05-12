@@ -52,6 +52,7 @@ class BloodEvent(models.Model):
     blood_type = models.CharField(max_length=3, choices=blood_type_CHOICES)
     message = models.TextField(blank=True,null=True)
     required_date = models.DateField()
+    location = models.CharField(max_length=255,null=True,blank=False) 
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_events')
     accepted_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='accepted_events', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
