@@ -5,25 +5,78 @@ from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer,
 
 User = get_user_model()
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(source='user.email', read_only=True)
-    phone = serializers.CharField(source='user.phone', read_only=True)
-    user_type = serializers.CharField(source='user.user_type', read_only=True)
-    is_available = serializers.BooleanField(source='user.is_available', read_only=True)
-    avatar=serializers.ImageField(required=False, allow_null=True)
+# class UserProfileSerializer(serializers.ModelSerializer):
+#     email = serializers.EmailField(source='user.email', read_only=True)
+#     phone = serializers.CharField(source='user.phone', read_only=True)
+#     user_type = serializers.CharField(source='user.user_type', read_only=True)
+#     is_available = serializers.BooleanField(source='user.is_available', read_only=True)
+#     avatar=serializers.ImageField(required=False, allow_null=True)
     
+#     class Meta:
+#         model = UserProfile
+#         fields = [
+#             'id', 'email', 'phone', 'user_type', 'blood_type',
+#             'health_conditions', 'avatar', 'is_available'
+#         ]
+#     def validate_blood_type(self, value):
+#         valid_groups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
+#         if value and value not in valid_groups:
+#             raise serializers.ValidationError("Invalid blood group")
+#         return value
+    
+from rest_framework import serializers
+from users.models import UserProfile, User
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    # Flattened User fields inside the profile serializer
+    first_name = serializers.CharField(source='user.first_name', required=False)
+    last_name = serializers.CharField(source='user.last_name', required=False)
+    phone = serializers.CharField(source='user.phone', required=False)
+    user_type = serializers.CharField(source='user.user_type', required=False)
+    address = serializers.CharField(source='user.address', required=False)
+    age = serializers.IntegerField(source='user.age', required=False)
+    last_donation_date = serializers.DateField(source='user.last_donation_date', required=False)
+    is_available = serializers.BooleanField(source='user.is_available', required=False)
+    is_verified = serializers.BooleanField(source='user.is_verified', required=False)
+    email = serializers.EmailField(source='user.email', read_only=True)  # read-only
+
     class Meta:
         model = UserProfile
         fields = [
-            'id', 'email', 'phone', 'user_type', 'blood_type',
-            'health_conditions', 'avatar', 'is_available'
+            'id',
+            'email',  # from user
+            'first_name',
+            'last_name',
+            'phone',
+            'user_type',
+            'address',
+            'age',
+            'last_donation_date',
+            'is_available',
+            'is_verified',
+            'blood_type',
+            'health_conditions',
+            'avatar',
+            'created_at',
+            'updated_at',
         ]
-    def validate_blood_type(self, value):
-        valid_groups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
-        if value and value not in valid_groups:
-            raise serializers.ValidationError("Invalid blood group")
-        return value
-    
+        read_only_fields = ['created_at', 'updated_at']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+
+        # Update fields from User model
+        for attr, value in user_data.items():
+            setattr(instance.user, attr, value)
+        instance.user.save()
+
+        # Update fields from UserProfile model
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
 
 class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):

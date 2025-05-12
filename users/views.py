@@ -32,13 +32,35 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
+# class UserProfileViewSet(viewsets.ModelViewSet):
+#     serializer_class = UserProfileSerializer
+#     permission_classes = [IsAuthenticated]
+#     lookup_field = 'pk'
+#     def get_queryset(self):
+#         return UserProfile.objects.filter(user=self.request.user)
+    
+#     def create(self, request, *args, **kwargs):
+#         if hasattr(request.user, 'profile'):
+#             return Response(
+#                 {"detail": "Profile already exists. Use update instead."},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+#         return super().create(request, *args, **kwargs)
+    
+#     def perform_create(self, serializer):
+#         serializer.save(user=self.request.user)
+
 class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = 'pk'
+    http_method_names = ['get', 'patch', 'head', 'options']  
+    
     def get_queryset(self):
         return UserProfile.objects.filter(user=self.request.user)
-    
+
+    def get_object(self):
+        return self.request.user.profile
+
     def create(self, request, *args, **kwargs):
         if hasattr(request.user, 'profile'):
             return Response(
@@ -46,9 +68,17 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         return super().create(request, *args, **kwargs)
-    
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
 
 class PublicDonorListView(generics.ListAPIView):
     """
@@ -63,6 +93,30 @@ class PublicDonorListView(generics.ListAPIView):
     serializer_class = PublicDonorSerializer
     permission_classes = [permissions.AllowAny]  
 
+
+class UserProfileViewSet(viewsets.ModelViewSet):
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'patch', 'head', 'options']  
+
+    def get_queryset(self):
+        return UserProfile.objects.filter(user=self.request.user)
+
+    def get_object(self):
+        return self.request.user.profile
+
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Profile already exists. Use update instead."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
 class RequestBloodView(generics.CreateAPIView):
     """
