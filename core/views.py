@@ -197,8 +197,6 @@ class BloodEventViewSet(viewsets.ModelViewSet):
         return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
 
 
-
-# views.py
 from datetime import timedelta
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes

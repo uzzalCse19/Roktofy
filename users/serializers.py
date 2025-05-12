@@ -10,7 +10,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(source='user.phone', read_only=True)
     user_type = serializers.CharField(source='user.user_type', read_only=True)
     is_available = serializers.BooleanField(source='user.is_available', read_only=True)
-    avatar=serializers.ImageField()
+    avatar=serializers.ImageField(required=False, allow_null=True)
     
     class Meta:
         model = UserProfile
