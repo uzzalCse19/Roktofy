@@ -47,8 +47,14 @@ class Donation(models.Model):
         unique_together = ('donor', 'request')  
         ordering = ['-donation_date']
 
-
 class BloodEvent(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('completed', 'Completed'),
+        ('canceled', 'Canceled'),
+    ]
+
     blood_type = models.CharField(max_length=3, choices=blood_type_CHOICES)
     message = models.TextField(blank=True,null=True)
     required_date = models.DateField()
@@ -56,6 +62,6 @@ class BloodEvent(models.Model):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_events')
     accepted_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='accepted_events', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending') 
     def __str__(self):
         return f"{self.creator.email} needs {self.blood_type} on {self.required_date}"

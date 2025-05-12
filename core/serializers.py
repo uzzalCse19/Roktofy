@@ -66,7 +66,7 @@ class BloodEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BloodEvent
-        fields = ['id', 'blood_type', 'message', 'required_date','location', 'creator', 'accepted_by', 'created_at']
+        fields = ['id', 'blood_type', 'message', 'required_date','location', 'creator', 'accepted_by', 'created_at', 'status']
         read_only_fields = ['creator', 'accepted_by', 'created_at']
 
 
