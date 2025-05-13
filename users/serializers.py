@@ -5,6 +5,13 @@ from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer,
 
 User = get_user_model()
 
+blood_type_CHOICES = [
+    ('O+', 'O+'), ('O-', 'O-'),
+    ('A+', 'A+'), ('A-', 'A-'),
+    ('B+', 'B+'), ('B-', 'B-'),
+    ('AB+', 'AB+'), ('AB-', 'AB-'),
+]
+
 # class UserProfileSerializer(serializers.ModelSerializer):
 #     email = serializers.EmailField(source='user.email', read_only=True)
 #     phone = serializers.CharField(source='user.phone', read_only=True)
@@ -44,7 +51,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
-            'id',
             'email',  # from user
             'first_name',
             'last_name',
@@ -78,17 +84,43 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         return instance
 
+# class UserCreateSerializer(BaseUserCreateSerializer):
+#     class Meta(BaseUserCreateSerializer.Meta):
+#         fields = [
+#             'id', 'email', 'password', 'first_name', 'last_name',
+#             'address', 'phone', 'age', 'user_type'
+#         ]
+# class UserSerializer(BaseUserSerializer):
+#     class Meta(BaseUserSerializer.Meta):
+#         ref_name = 'CustomUser'
+#         fields = ['id', 'email', 'first_name',
+#                   'last_name', 'address', 'phone']
+
+
 class UserCreateSerializer(BaseUserCreateSerializer):
+    blood_type = serializers.ChoiceField(choices=blood_type_CHOICES, required=True)
+    
     class Meta(BaseUserCreateSerializer.Meta):
         fields = [
             'id', 'email', 'password', 'first_name', 'last_name',
-            'address', 'phone', 'age', 'user_type'
+            'address', 'phone', 'age', 'user_type', 'blood_type'
         ]
+    
+    def create(self, validated_data):
+        blood_type = validated_data.pop('blood_type', None)
+        user = super().create(validated_data)
+        
+      
+        UserProfile.objects.create(user=user, blood_type=blood_type)
+        
+        return user
+    
 class UserSerializer(BaseUserSerializer):
+    blood_type = serializers.CharField(source='profile.blood_type', read_only=True)
+    
     class Meta(BaseUserSerializer.Meta):
         ref_name = 'CustomUser'
-        fields = ['id', 'email', 'first_name',
-                  'last_name', 'address', 'phone']
+        fields = ['id', 'email', 'first_name', 'last_name', 'address', 'phone', 'blood_type']
 
 class PublicDonorSerializer(serializers.ModelSerializer):
     blood_type = serializers.CharField(source='profile.blood_type')
