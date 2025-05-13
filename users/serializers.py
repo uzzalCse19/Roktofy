@@ -84,21 +84,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         return instance
 
-# class UserCreateSerializer(BaseUserCreateSerializer):
-#     class Meta(BaseUserCreateSerializer.Meta):
-#         fields = [
-#             'id', 'email', 'password', 'first_name', 'last_name',
-#             'address', 'phone', 'age', 'user_type'
-#         ]
-# class UserSerializer(BaseUserSerializer):
-#     class Meta(BaseUserSerializer.Meta):
-#         ref_name = 'CustomUser'
-#         fields = ['id', 'email', 'first_name',
-#                   'last_name', 'address', 'phone']
-
-
-
 class UserCreateSerializer(BaseUserCreateSerializer):
+    class Meta(BaseUserCreateSerializer.Meta):
+        fields = [
+            'id', 'email', 'password', 'first_name', 'last_name',
+            'address', 'phone', 'age', 'user_type'
+        ]
+class UserSerializer(BaseUserSerializer):
+    class Meta(BaseUserSerializer.Meta):
+        ref_name = 'CustomUser'
+        fields = ['id', 'email', 'first_name',
+                  'last_name', 'address', 'phone']
+
+
+
+class UserCreateSerializer_two(BaseUserCreateSerializer):
     blood_type = serializers.ChoiceField(
         choices=blood_type_CHOICES,
         required=True,
@@ -128,16 +128,17 @@ class UserCreateSerializer(BaseUserCreateSerializer):
                 {"detail": f"Failed to create user profile: {str(e)}"}
             )
 
-class UserSerializer(BaseUserSerializer):
+class UserSerializer_two(BaseUserSerializer):
     blood_type = serializers.SerializerMethodField()
     
     class Meta(BaseUserSerializer.Meta):
-        ref_name = 'CustomUser'  # Unique identifier for this serializer
+        ref_name = 'CustomUser'
         fields = [
-            'id', 'email', 'first_name', 
-            'last_name', 'address', 'phone', 
-            'blood_type'
+            'id', 'email', 'first_name', 'last_name', 
+            'address', 'phone', 'blood_type',
+            'is_available', 'last_donation_date', 'user_type'
         ]
+        read_only_fields = ['is_available', 'last_donation_date']  # If these should be read-only
     
     def get_blood_type(self, obj):
         """Safely get blood_type from profile if exists"""

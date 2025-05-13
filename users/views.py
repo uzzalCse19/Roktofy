@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
 from users.models import User, UserProfile
-from users.serializers import UserSerializer, UserProfileSerializer
+from users.serializers import UserSerializer, UserProfileSerializer,UserCreateSerializer_two,UserSerializer_two
 from users.permissions import IsVerifiedUser
 from users.filters import UserFilter
 from users.paginations import UserPagination
@@ -161,7 +161,7 @@ class UserCreateView(generics.CreateAPIView):
     """
     View for user registration with blood type
     """
-    serializer_class = UserCreateSerializer
+    serializer_class = UserCreateSerializer_two
     permission_classes = [permissions.AllowAny]  # Allow unauthenticated access
     
     def create(self, request, *args, **kwargs):
@@ -181,7 +181,7 @@ class CurrentUserView(generics.RetrieveAPIView):
     """
     View to get current authenticated user's details including blood type
     """
-    serializer_class = UserSerializer
+    serializer_class = UserSerializer_two
     permission_classes = [permissions.IsAuthenticated]
     
     def get_object(self):
@@ -191,7 +191,7 @@ class UserProfileUpdateView(generics.UpdateAPIView):
     """
     View to update user profile (including blood type)
     """
-    serializer_class = UserSerializer
+    serializer_class = UserSerializer_two
     permission_classes = [permissions.IsAuthenticated]
     
     def get_object(self):
