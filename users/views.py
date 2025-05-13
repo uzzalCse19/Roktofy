@@ -150,7 +150,68 @@ class DonorListView(generics.ListAPIView):
         )
 
 
+# new added 
 
+
+
+from .serializers import UserCreateSerializer, UserSerializer
+
+
+class UserCreateView(generics.CreateAPIView):
+    """
+    View for user registration with blood type
+    """
+    serializer_class = UserCreateSerializer
+    permission_classes = [permissions.AllowAny]  # Allow unauthenticated access
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        
+        # Return only basic user info without sensitive data
+        response_data = {
+            'id': user.id,
+            'email': user.email,
+            'message': 'User registered successfully'
+        }
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+class CurrentUserView(generics.RetrieveAPIView):
+    """
+    View to get current authenticated user's details including blood type
+    """
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user
+
+class UserProfileUpdateView(generics.UpdateAPIView):
+    """
+    View to update user profile (including blood type)
+    """
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # Handle blood type separately if provided
+        blood_type = request.data.pop('blood_type', None)
+        if blood_type and hasattr(instance, 'profile'):
+            instance.profile.blood_type = blood_type
+            instance.profile.save()
+        
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        return Response(serializer.data)
 
 
 # class UserRegistrationView(generics.CreateAPIView):
