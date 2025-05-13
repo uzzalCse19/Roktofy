@@ -197,33 +197,33 @@ class BloodEventViewSet(viewsets.ModelViewSet):
         return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
 
 
-from datetime import timedelta
-from django.utils import timezone
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import BloodRequest
+# from datetime import timedelta
+# from django.utils import timezone
+# from rest_framework.decorators import api_view, permission_classes
+# from rest_framework.response import Response
+# from rest_framework.permissions import IsAuthenticated
+# from .models import BloodRequest
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def check_donor_eligibility(request, donor_id):
-    user = request.user
-    days_limit = 90
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def check_donor_eligibility(request, donor_id):
+#     user = request.user
+#     days_limit = 90
 
-    # Find the latest request from this user to the same donor
-    latest_request = BloodRequest.objects.filter(
-        requester=user, donor_id=donor_id
-    ).order_by('-created_at').first()
+#     # Find the latest request from this user to the same donor
+#     latest_request = BloodRequest.objects.filter(
+#         requester=user, donor_id=donor_id
+#     ).order_by('-created_at').first()
 
-    if not latest_request:
-        return Response({ "eligible": True })
+#     if not latest_request:
+#         return Response({ "eligible": True })
 
-    days_ago = (timezone.now() - latest_request.created_at).days
+#     days_ago = (timezone.now() - latest_request.created_at).days
 
-    if days_ago >= days_limit:
-        return Response({ "eligible": True })
-    else:
-        return Response({
-            "eligible": False,
-            "days_ago": days_ago
-        })
+#     if days_ago >= days_limit:
+#         return Response({ "eligible": True })
+#     else:
+#         return Response({
+#             "eligible": False,
+#             "days_ago": days_ago
+#         })
