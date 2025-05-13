@@ -98,52 +98,6 @@ class UserSerializer(BaseUserSerializer):
 
 
 
-class UserCreateSerializer_two(BaseUserCreateSerializer):
-    blood_type = serializers.ChoiceField(
-        choices=blood_type_CHOICES,
-        required=True,
-        write_only=True  # Blood type shouldn't be returned in response
-    )
-    
-    class Meta(BaseUserCreateSerializer.Meta):
-        fields = [
-            'id', 'email', 'password', 'first_name', 'last_name',
-            'address', 'phone', 'age', 'user_type', 'blood_type'
-        ]
-    
-    def create(self, validated_data):
-        try:
-            blood_type = validated_data.pop('blood_type')
-            user = super().create(validated_data)
-            
-            # Create or update user profile
-            UserProfile.objects.update_or_create(
-                user=user,
-                defaults={'blood_type': blood_type}
-            )
-            
-            return user
-        except Exception as e:
-            raise serializers.ValidationError(
-                {"detail": f"Failed to create user profile: {str(e)}"}
-            )
-
-class UserSerializer_two(BaseUserSerializer):
-    blood_type = serializers.CharField(
-        source='profile.blood_type',
-        required=False,
-        allow_null=True
-    )
-    last_donation_date = serializers.DateField(required=False, allow_null=True)
-    is_available = serializers.BooleanField(required=False)
-    
-    class Meta(BaseUserSerializer.Meta):
-        ref_name = 'CustomUser'
-        fields = [
-            'id', 'email', 'first_name', 'last_name', 
-            'address', 'phone', 'blood_type',
-            'is_available', 'last_donation_date', 'user_type'
-        ]
 class PublicDonorSerializer(serializers.ModelSerializer):
     blood_type = serializers.CharField(source='profile.blood_type')
     avatar = serializers.ImageField(source='profile.avatar', allow_null=True)
