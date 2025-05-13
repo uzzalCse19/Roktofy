@@ -97,8 +97,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
 #                   'last_name', 'address', 'phone']
 
 
+
 class UserCreateSerializer(BaseUserCreateSerializer):
-    blood_type = serializers.ChoiceField(choices=blood_type_CHOICES, required=True)
+    blood_type = serializers.ChoiceField(
+        choices=blood_type_CHOICES,
+        required=True,
+        write_only=True  # Blood type shouldn't be returned in response
+    )
     
     class Meta(BaseUserCreateSerializer.Meta):
         fields = [
@@ -107,20 +112,36 @@ class UserCreateSerializer(BaseUserCreateSerializer):
         ]
     
     def create(self, validated_data):
-        blood_type = validated_data.pop('blood_type', None)
-        user = super().create(validated_data)
-        
-      
-        UserProfile.objects.create(user=user, blood_type=blood_type)
-        
-        return user
-    
+        try:
+            blood_type = validated_data.pop('blood_type')
+            user = super().create(validated_data)
+            
+            # Create or update user profile
+            UserProfile.objects.update_or_create(
+                user=user,
+                defaults={'blood_type': blood_type}
+            )
+            
+            return user
+        except Exception as e:
+            raise serializers.ValidationError(
+                {"detail": f"Failed to create user profile: {str(e)}"}
+            )
+
 class UserSerializer(BaseUserSerializer):
-    blood_type = serializers.CharField(source='profile.blood_type', read_only=True)
+    blood_type = serializers.SerializerMethodField()
     
     class Meta(BaseUserSerializer.Meta):
-        ref_name = 'CustomUser'
-        fields = ['id', 'email', 'first_name', 'last_name', 'address', 'phone', 'blood_type']
+        ref_name = 'CustomUser'  # Unique identifier for this serializer
+        fields = [
+            'id', 'email', 'first_name', 
+            'last_name', 'address', 'phone', 
+            'blood_type'
+        ]
+    
+    def get_blood_type(self, obj):
+        """Safely get blood_type from profile if exists"""
+        return obj.profile.blood_type if hasattr(obj, 'profile') else None
 
 class PublicDonorSerializer(serializers.ModelSerializer):
     blood_type = serializers.CharField(source='profile.blood_type')
