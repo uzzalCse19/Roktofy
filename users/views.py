@@ -188,9 +188,6 @@ class CurrentUserView(generics.RetrieveAPIView):
         return self.request.user
 
 class UserProfileUpdateView(generics.UpdateAPIView):
-    """
-    View to update user profile (including blood type)
-    """
     serializer_class = UserSerializer_two
     permission_classes = [permissions.IsAuthenticated]
     
@@ -198,18 +195,34 @@ class UserProfileUpdateView(generics.UpdateAPIView):
         return self.request.user
     
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop('partial', True)  # Allow partial updates
         instance = self.get_object()
         
-        # Handle blood type separately if provided
-        blood_type = request.data.pop('blood_type', None)
-        if blood_type and hasattr(instance, 'profile'):
-            instance.profile.blood_type = blood_type
-            instance.profile.save()
+        # Get profile if exists
+        profile = getattr(instance, 'profile', None)
         
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        # Prepare data for update
+        data = request.data.copy()
+        blood_type = data.pop('blood_type', None)
+        
+        # Update main user fields
+        serializer = self.get_serializer(
+            instance, 
+            data=data, 
+            partial=partial
+        )
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        
+        # Update profile fields if they exist
+        if profile and blood_type is not None:
+            profile.blood_type = blood_type
+            profile.save()
+        
+        # Refresh instance to get updated data
+        instance.refresh_from_db()
+        if hasattr(instance, 'profile'):
+            instance.profile.refresh_from_db()
         
         return Response(serializer.data)
 

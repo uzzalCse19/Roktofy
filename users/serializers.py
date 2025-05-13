@@ -129,7 +129,13 @@ class UserCreateSerializer_two(BaseUserCreateSerializer):
             )
 
 class UserSerializer_two(BaseUserSerializer):
-    blood_type = serializers.SerializerMethodField()
+    blood_type = serializers.CharField(
+        source='profile.blood_type',
+        required=False,
+        allow_null=True
+    )
+    last_donation_date = serializers.DateField(required=False, allow_null=True)
+    is_available = serializers.BooleanField(required=False)
     
     class Meta(BaseUserSerializer.Meta):
         ref_name = 'CustomUser'
@@ -138,12 +144,6 @@ class UserSerializer_two(BaseUserSerializer):
             'address', 'phone', 'blood_type',
             'is_available', 'last_donation_date', 'user_type'
         ]
-        read_only_fields = ['is_available', 'last_donation_date']  # If these should be read-only
-    
-    def get_blood_type(self, obj):
-        """Safely get blood_type from profile if exists"""
-        return obj.profile.blood_type if hasattr(obj, 'profile') else None
-
 class PublicDonorSerializer(serializers.ModelSerializer):
     blood_type = serializers.CharField(source='profile.blood_type')
     avatar = serializers.ImageField(source='profile.avatar', allow_null=True)
