@@ -147,6 +147,14 @@ class CustomUserCreateSerializer(BaseUserCreateSerializer):
 
         return user
 
+# new added
+from rest_framework import serializers
+from .models import UserProfile
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['blood_type', 'health_conditions', 'avatar']  # Include avatar here
 
 
 
