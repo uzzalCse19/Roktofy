@@ -96,48 +96,136 @@ class DonationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# class DashboardView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     def get(self, request):
+#         user = request.user
+#         dashboard = {}
+#         profile = getattr(user, 'profile', None)
+#         blood_type = profile.blood_type if profile else None
+#         dashboard['blood_type'] = blood_type
+#         if user.user_type in ['recipient', 'both']:
+#             recipient_data = BloodRequest.objects.filter(
+#                 requester=user
+#             ).select_related('requester').order_by('-created_at') 
+#             dashboard['total_requests'] = recipient_data.count()
+#             dashboard['pending_requests'] = recipient_data.filter(status='pending').count()
+#             dashboard['my_requests'] = BloodRequestSerializer(
+#                 recipient_data[:10],  
+#                 many=True
+#             ).data
+
+#         if user.user_type in ['donor', 'both'] and blood_type:
+#             donations = Donation.objects.filter(
+#                 donor=user
+#             ).select_related(
+#                 'donor', 
+#                 'request',
+#                 'request__requester'
+#             ).order_by('-donation_date')
+            
+#             verified_donations = donations.filter(is_verified=True)
+#             dashboard['completed_donations'] = verified_donations.count()
+#             dashboard['last_donation_date'] = verified_donations.first().donation_date if verified_donations.exists() else None
+#             dashboard['donation_history'] = DonationSerializer(
+#                 donations[:10],  
+#                 many=True
+#             ).data
+
+#             dashboard['available_requests'] = BloodRequestSerializer(
+#                 BloodRequest.objects.filter(
+#                     status='pending',
+#                     blood_type=blood_type
+#                 ).exclude(requester=user).select_related('requester')[:10], 
+#                 many=True
+#             ).data
+
+#         return Response(dashboard)
+
+#     def post(self, request):
+#         user = request.user
+#         request_id = request.data.get('request_id')
+#         if not request_id:
+#             return Response({'error': 'Request ID required'}, status=status.HTTP_400_BAD_REQUEST)
+#         try:
+#             with transaction.atomic():
+#                 blood_request = BloodRequest.objects.select_for_update().get(
+#                     id=request_id, 
+#                     status='pending'
+#                 )
+#                 Donation.objects.create(
+#                     donor=user,
+#                     recipient=blood_request.requester,
+#                     blood_type=blood_request.blood_type,
+#                     request=blood_request,
+#                     status='accepted'
+#                 )
+#                 blood_request.status = 'accepted'
+#                 blood_request.save(update_fields=['status'])
+#                 if user.is_available:
+#                     user.is_available = False
+#                     user.save(update_fields=['is_available'])
+#             return Response({'message': 'Request accepted successfully'})
+#         except BloodRequest.DoesNotExist:
+#             return Response({'error': 'Invalid request ID'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+from django.db import transaction
+from .serializers import BloodRequestSerializer, DonationSerializer
+
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         user = request.user
         dashboard = {}
+
+        # Get user profile and blood type if available
         profile = getattr(user, 'profile', None)
         blood_type = profile.blood_type if profile else None
         dashboard['blood_type'] = blood_type
+
+        # Recipient Dashboard Info
         if user.user_type in ['recipient', 'both']:
-            recipient_data = BloodRequest.objects.filter(
+            recipient_requests = BloodRequest.objects.filter(
                 requester=user
-            ).select_related('requester').order_by('-created_at') 
-            dashboard['total_requests'] = recipient_data.count()
-            dashboard['pending_requests'] = recipient_data.filter(status='pending').count()
+            ).select_related('requester').order_by('-created_at')
+
+            dashboard['total_requests'] = recipient_requests.count()
+            dashboard['pending_requests'] = recipient_requests.filter(status='pending').count()
             dashboard['my_requests'] = BloodRequestSerializer(
-                recipient_data[:10],  
-                many=True
+                recipient_requests[:10], many=True
             ).data
 
+        # Donor Dashboard Info
         if user.user_type in ['donor', 'both'] and blood_type:
             donations = Donation.objects.filter(
                 donor=user
             ).select_related(
-                'donor', 
-                'request',
-                'request__requester'
+                'donor', 'request', 'request__requester'
             ).order_by('-donation_date')
-            
+
             verified_donations = donations.filter(is_verified=True)
+
             dashboard['completed_donations'] = verified_donations.count()
-            dashboard['last_donation_date'] = verified_donations.first().donation_date if verified_donations.exists() else None
+            dashboard['last_donation_date'] = (
+                verified_donations.first().donation_date if verified_donations.exists() else None
+            )
             dashboard['donation_history'] = DonationSerializer(
-                donations[:10],  
-                many=True
+                donations[:10], many=True
             ).data
 
+            # Available blood requests for this donor’s blood type
+            available_requests = BloodRequest.objects.filter(
+                status='pending',
+                blood_type=blood_type
+            ).exclude(requester=user).select_related('requester').order_by('-created_at')[:10]
+
             dashboard['available_requests'] = BloodRequestSerializer(
-                BloodRequest.objects.filter(
-                    status='pending',
-                    blood_type=blood_type
-                ).exclude(requester=user).select_related('requester')[:10], 
-                many=True
+                available_requests, many=True
             ).data
 
         return Response(dashboard)
@@ -145,14 +233,18 @@ class DashboardView(APIView):
     def post(self, request):
         user = request.user
         request_id = request.data.get('request_id')
+
         if not request_id:
             return Response({'error': 'Request ID required'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             with transaction.atomic():
                 blood_request = BloodRequest.objects.select_for_update().get(
-                    id=request_id, 
+                    id=request_id,
                     status='pending'
                 )
+
+                # Create the donation record
                 Donation.objects.create(
                     donor=user,
                     recipient=blood_request.requester,
@@ -160,14 +252,21 @@ class DashboardView(APIView):
                     request=blood_request,
                     status='accepted'
                 )
+
+                # Update the request status
                 blood_request.status = 'accepted'
                 blood_request.save(update_fields=['status'])
+
+                # Set donor availability to False
                 if user.is_available:
                     user.is_available = False
                     user.save(update_fields=['is_available'])
+
             return Response({'message': 'Request accepted successfully'})
+
         except BloodRequest.DoesNotExist:
             return Response({'error': 'Invalid request ID'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class PaymentPlaceholderView(APIView):
     permission_classes = [IsAuthenticated]
