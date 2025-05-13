@@ -20,6 +20,8 @@ from django.contrib.auth import get_user_model
 from users.filters import DonorFilter
 from users.serializers import DonorListSerializer
 from django.db.models import Q
+from rest_framework.decorators import api_view, permission_classes
+
 
 User = get_user_model()
 
@@ -32,23 +34,6 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
-# class UserProfileViewSet(viewsets.ModelViewSet):
-#     serializer_class = UserProfileSerializer
-#     permission_classes = [IsAuthenticated]
-#     lookup_field = 'pk'
-#     def get_queryset(self):
-#         return UserProfile.objects.filter(user=self.request.user)
-    
-#     def create(self, request, *args, **kwargs):
-#         if hasattr(request.user, 'profile'):
-#             return Response(
-#                 {"detail": "Profile already exists. Use update instead."},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#         return super().create(request, *args, **kwargs)
-    
-#     def perform_create(self, serializer):
-#         serializer.save(user=self.request.user)
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
@@ -175,6 +160,21 @@ class UserUpdateView_two(generics.UpdateAPIView):
         return self.request.user  
 
 
+# new Added
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def check_profile_complete(request):
+    user = request.user
+    is_complete = all([
+        user.age is not None,
+        bool(user.address),
+        bool(user.phone),
+        user.is_available is not None,
+        hasattr(user, 'profile') and bool(user.profile.blood_type)
+    ])
+    return Response({'is_profile_complete': is_complete})
+
 # class UserRegistrationView(generics.CreateAPIView):
 #     serializer_class = UserRegistrationSerializer
 #     permission_classes = [permissions.AllowAny]
@@ -255,3 +255,20 @@ class UserUpdateView_two(generics.UpdateAPIView):
 #         )
     
 
+# class UserProfileViewSet(viewsets.ModelViewSet):
+#     serializer_class = UserProfileSerializer
+#     permission_classes = [IsAuthenticated]
+#     lookup_field = 'pk'
+#     def get_queryset(self):
+#         return UserProfile.objects.filter(user=self.request.user)
+    
+#     def create(self, request, *args, **kwargs):
+#         if hasattr(request.user, 'profile'):
+#             return Response(
+#                 {"detail": "Profile already exists. Use update instead."},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+#         return super().create(request, *args, **kwargs)
+    
+#     def perform_create(self, serializer):
+#         serializer.save(user=self.request.user)
