@@ -156,7 +156,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ['blood_type', 'health_conditions', 'avatar']  # Include avatar here
 
+# new added 2
 
+class UserUpdateSerializer_two(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'user_type', 'age', 'address', 'last_donation_date', 'is_available']
 
 # class UserRegistrationSerializer(serializers.ModelSerializer):
 #     password = serializers.CharField(write_only=True, min_length=8)

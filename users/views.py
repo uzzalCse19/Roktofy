@@ -152,7 +152,6 @@ class DonorListView(generics.ListAPIView):
 
 # new added 
 
-# users/views.py
 from rest_framework import generics, permissions
 from .models import UserProfile
 from .serializers import UserProfileSerializer
@@ -163,6 +162,17 @@ class UserProfileUpdateView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user.profile
+
+# new added 2
+
+from .serializers import UserUpdateSerializer_two
+
+class UserUpdateView_two(generics.UpdateAPIView):
+    serializer_class = UserUpdateSerializer_two
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user  
 
 
 # class UserRegistrationView(generics.CreateAPIView):
