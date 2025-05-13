@@ -44,19 +44,7 @@ class BloodRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid blood group.")
         return value
 
-    def validate(self, attrs):
-        """
-        Ensure user hasn't submitted a request in the last 90 days.
-        """
-        user = self.context['request'].user
-        last_request = BloodRequest.objects.filter(requester=user).order_by('-created_at').first()
-        if last_request:
-            days_since = (timezone.now() - last_request.created_at).days
-            if days_since < 90:
-                raise serializers.ValidationError(
-                    f"You must wait at least 90 days between requests. Please wait {90 - days_since} more day(s)."
-                )
-        return attrs
+
 
 
 class DonationSerializer(serializers.ModelSerializer):
