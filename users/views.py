@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
 from users.models import User, UserProfile
-from users.serializers import UserSerializer, UserProfileSerializer,UserCreateSerializer_two,UserSerializer_two
+from users.serializers import UserSerializer, UserProfileSerializer
 from users.permissions import IsVerifiedUser
 from users.filters import UserFilter
 from users.paginations import UserPagination

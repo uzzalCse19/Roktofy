@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from users.views import (
     UserProfileViewSet, 
-    UserViewSet, PublicDonorListView, RequestBloodView,DonorListView,UserProfileUpdateView,CurrentUserView,UserCreateView
+    UserViewSet, PublicDonorListView, RequestBloodView,DonorListView
 )
 
 router = DefaultRouter()
@@ -18,8 +18,6 @@ urlpatterns = [
     path('public-donors/', PublicDonorListView.as_view(), name='public-donors'),
     path('request-blood/', RequestBloodView.as_view(), name='request-blood'),
     path('donor-list/', DonorListView.as_view(), name='donor-list'),
-    path('register/', UserCreateView.as_view(), name='user-register'),
-    path('me/', CurrentUserView.as_view(), name='current-user'),
-    path('me/update/', UserProfileUpdateView.as_view(), name='update-profile'),
+ 
 ]
  
