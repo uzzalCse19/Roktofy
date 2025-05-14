@@ -9,7 +9,8 @@ router.register(r'blood-events', BloodEventViewSet, basename='blood-event')
 
 urlpatterns = router.urls + [
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
-     path("initiate-payment/", initiate_payment, name="initiate-payment"),
+    # path("initiate/payment/", initiate_payment, name="initiate/payment"),
+    path("initiate/payment/", initiate_payment, name="initiate_payment"),
     # path("donation/initiate/", initiate_donation, name="initiate-donation"),
     # path("donation/success/", donation_success, name="donation-success"),
     # path("donation/fail/", donation_fail, name="donation-fail"),

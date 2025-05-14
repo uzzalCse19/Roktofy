@@ -298,8 +298,11 @@ from sslcommerz_lib import SSLCOMMERZ
 
 @api_view(['POST'])
 def initiate_payment(request):
+    print(request.data)
     user=request.user
+    print(user)
     amount=request.data.get("amount")
+    print(request.data)
     settings = { 'store_id': 'phima68242c124ae93', 'store_pass': 'phima68242c124ae93@ssl', 'issandbox': True }
     sslcz = SSLCOMMERZ(settings)
     post_body = {}
@@ -325,7 +328,7 @@ def initiate_payment(request):
 
 
     response = sslcz.createSession(post_body) # API response
-    print(response)
+    # print(response)
 
     if response.get("status") == 'SUCCESS':
         return Response({"payment_url": response['GatewayPageURL']})
