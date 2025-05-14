@@ -18,6 +18,7 @@ from django.db import transaction
 from rest_framework import permissions
 from rest_framework.decorators import api_view
 from django.conf import settings as main_settings
+from django.http import HttpResponseRedirect
 
 User = get_user_model()
 
@@ -82,6 +83,9 @@ class DonationViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(donor=self.request.user)
         return queryset
 
+    def perform_create(self, serializer):
+        serializer.save(donor=self.request.user)
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
@@ -95,6 +99,7 @@ class DonationViewSet(viewsets.ModelViewSet):
         instance = self.get_queryset().get(pk=kwargs['pk'])
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
 
 
 
@@ -298,7 +303,6 @@ from sslcommerz_lib import SSLCOMMERZ
 
 @api_view(['POST'])
 def initiate_payment(request):
-    print(request.data)
     user=request.user
     print(user)
     amount=request.data.get("amount")
@@ -309,9 +313,9 @@ def initiate_payment(request):
     post_body['total_amount'] = amount
     post_body['currency'] = "BDT"
     post_body['tran_id'] = "12345"
-    post_body['success_url'] = "http://localhost:5173/payment/success/"
-    post_body['fail_url'] = "http://localhost:5173/payment/fail/"
-    post_body['cancel_url'] = "http://localhost:5173/"
+    post_body['success_url'] = f"{main_settings.BACKEND_URL}/api/payment/success/"
+    post_body['fail_url'] = f"{main_settings.BACKEND_URL}/api/payment/fail/"
+    post_body['cancel_url'] = f"{main_settings.BACKEND_URL}/api/payment/cancel/"
     post_body['emi_option'] = 0
     post_body['cus_name'] = f"{user.first_name} {user.last_name}"
     post_body['cus_email'] = user.email
@@ -334,7 +338,21 @@ def initiate_payment(request):
         return Response({"payment_url": response['GatewayPageURL']})
     return Response({"error": "Payment initiation failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-     
+
+@api_view(['POST'])
+def payment_success(request):
+    print("Inside success")
+    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
+
+
+@api_view(['POST'])
+def payment_cancel(request):
+    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
+
+@api_view(['POST'])
+def payment_fail(request):
+    print("Inside fail")
+    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/fail/")
 
 
 # from datetime import timedelta
