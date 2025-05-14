@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from django.db import transaction
 from rest_framework import permissions
 from rest_framework.decorators import api_view
-
+from django.conf import settings as main_settings
 
 User = get_user_model()
 
@@ -289,21 +289,26 @@ class BloodEventViewSet(viewsets.ModelViewSet):
             return Response({'error': 'You cannot accept your own event.'}, status=status.HTTP_400_BAD_REQUEST)
         event.accepted_by.add(request.user)
         return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
-from sslcommerz_lib import SSLCOMMERZ 
+    
 
+ 
+
+
+from sslcommerz_lib import SSLCOMMERZ 
 
 @api_view(['POST'])
 def initiate_payment(request):
-    user = request.user
-    amount = request.data.get("amount")
-    settings = { 'store_id': 'rokto681b8b6f60a88', 'store_pass': 'rokto681b8b6f60a88@ssl', 'issandbox': True }
+    user=request.user
+    amount=request.data.get("amount")
+    settings = { 'store_id': 'phima68242c124ae93', 'store_pass': 'phima68242c124ae93@ssl', 'issandbox': True }
     sslcz = SSLCOMMERZ(settings)
     post_body = {}
     post_body['total_amount'] = amount
     post_body['currency'] = "BDT"
     post_body['tran_id'] = "12345"
-    post_body['success_url'] = "https://roktofy.vercel.app/donate?status=success"
-    post_body['cancel_url'] = "https://roktofy.vercel.app/donate?status=fail"
+    post_body['success_url'] = "http://localhost:5173/dashboard/payment/success/"
+    post_body['fail_url'] = "http://localhost:5173/dashboard/payment/fail/"
+    post_body['cancel_url'] = "http://localhost:5173/"
     post_body['emi_option'] = 0
     post_body['cus_name'] = f"{user.first_name} {user.last_name}"
     post_body['cus_email'] = user.email
@@ -314,14 +319,20 @@ def initiate_payment(request):
     post_body['shipping_method'] = "NO"
     post_body['multi_card_name'] = ""
     post_body['num_of_item'] = 1
-    post_body['product_name'] = "Donation Srvice"
-    post_body['product_category'] = "General"
+    post_body['product_name'] = "Donation Service"
+    post_body['product_category'] = "Service"
     post_body['product_profile'] = "general"
-    response = sslcz.createSession(post_body)  
+
+
+    response = sslcz.createSession(post_body) # API response
+    print(response)
 
     if response.get("status") == 'SUCCESS':
         return Response({"payment_url": response['GatewayPageURL']})
     return Response({"error": "Payment initiation failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+     
+
 
 # from datetime import timedelta
 # from django.utils import timezone
