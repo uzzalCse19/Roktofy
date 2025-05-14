@@ -302,9 +302,8 @@ def initiate_payment(request):
     post_body['total_amount'] = amount
     post_body['currency'] = "BDT"
     post_body['tran_id'] = "12345"
-    post_body['success_url'] = "http://localhost:5173/payment/success"
-    post_body['fail_url'] = "http://localhost:5173/payment/fail"
-    post_body['cancel_url'] = "http://localhost:5173/"
+    post_body['success_url'] = "https://roktofy.vercel.app/donate?status=success"
+    post_body['cancel_url'] = "https://roktofy.vercel.app/donate?status=fail"
     post_body['emi_option'] = 0
     post_body['cus_name'] = f"{user.first_name} {user.last_name}"
     post_body['cus_email'] = user.email
@@ -312,7 +311,7 @@ def initiate_payment(request):
     post_body['cus_add1'] = user.address
     post_body['cus_city'] = "Dhaka"
     post_body['cus_country'] = "Bangladesh"
-    post_body['shipping_method'] = "Courier"
+    post_body['shipping_method'] = "NO"
     post_body['multi_card_name'] = ""
     post_body['num_of_item'] = 1
     post_body['product_name'] = "Donation Srvice"
