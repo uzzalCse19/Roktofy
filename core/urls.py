@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from core.views import BloodRequestViewSet ,DonationViewSet,payment_success,payment_cancel,payment_fail, DashboardView,BloodEventViewSet,initiate_payment
+from core.views import BloodRequestViewSet ,DonationViewSet,payment_success,PaymentHistoryView,payment_cancel,payment_fail, DashboardView,BloodEventViewSet,initiate_payment
 
 router = DefaultRouter()
 router.register(r'blood-requests', BloodRequestViewSet, basename='blood-request')
@@ -14,5 +14,6 @@ urlpatterns = router.urls + [
     path("payment/success/", payment_success, name="payment-success"),
     path("payment/fail/", payment_fail, name="payment-fail"),
     path("payment/cancel/", payment_cancel, name="payment-cancel"),
+    path('payment/history/', PaymentHistoryView.as_view(), name='payment-history'),
 ]
 

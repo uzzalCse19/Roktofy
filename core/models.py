@@ -2,8 +2,9 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from users.models import User
 from django.conf import settings
+from django.contrib.auth import get_user_model
 
-
+User = get_user_model()
 blood_type_CHOICES = [
     ('O+', 'O+'), ('O-', 'O-'),
     ('A+', 'A+'), ('A-', 'A-'),
@@ -65,3 +66,24 @@ class BloodEvent(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending') 
     def __str__(self):
         return f"{self.creator.email} needs {self.blood_type} on {self.required_date}"
+
+
+# models.py
+from django.db import models
+from django.contrib.auth import get_user_model
+
+
+
+class PaymentHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_id = models.CharField(max_length=100)
+    status = models.CharField(max_length=20)  # success, failed, canceled
+    timestamp = models.DateTimeField(auto_now_add=True)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    email = models.EmailField()
+    phone = models.CharField(max_length=15, blank=True, null=True)
+
+    class Meta:
+        ordering = ['-timestamp']

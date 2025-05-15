@@ -19,7 +19,7 @@ from rest_framework import permissions
 from rest_framework.decorators import api_view
 from django.conf import settings as main_settings
 from django.http import HttpResponseRedirect
-
+from core.models import PaymentHistory
 User = get_user_model()
 
 class BloodRequestViewSet(viewsets.ModelViewSet):
@@ -339,20 +339,78 @@ def initiate_payment(request):
     return Response({"error": "Payment initiation failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# @api_view(['POST'])
+# def payment_success(request):
+#     print("Inside success")
+#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
+
+
+# @api_view(['POST'])
+# def payment_cancel(request):
+#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
+
+# @api_view(['POST'])
+# def payment_fail(request):
+#     print("Inside fail")
+#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/fail/")
+
+# views.py
 @api_view(['POST'])
 def payment_success(request):
-    print("Inside success")
+    # Get data from SSLCommerz response
+    payment_data = request.data
+    
+    # Create payment history record
+    PaymentHistory.objects.create(
+        user=request.user,
+        amount=payment_data.get('amount'),
+        transaction_id=payment_data.get('tran_id'),
+        status='success',
+        first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
+        last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
+        email=payment_data.get('cus_email'),
+        phone=payment_data.get('cus_phone')
+    )
+    
     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
-
-
-@api_view(['POST'])
-def payment_cancel(request):
-    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
 
 @api_view(['POST'])
 def payment_fail(request):
-    print("Inside fail")
+    payment_data = request.data
+    PaymentHistory.objects.create(
+        user=request.user,
+        amount=payment_data.get('amount'),
+        transaction_id=payment_data.get('tran_id'),
+        status='failed',
+        first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
+        last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
+        email=payment_data.get('cus_email'),
+        phone=payment_data.get('cus_phone')
+    )
     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/fail/")
 
+@api_view(['POST'])
+def payment_cancel(request):
+    payment_data = request.data
+    PaymentHistory.objects.create(
+        user=request.user,
+        amount=payment_data.get('amount'),
+        transaction_id=payment_data.get('tran_id'),
+        status='canceled',
+        first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
+        last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
+        email=payment_data.get('cus_email'),
+        phone=payment_data.get('cus_phone')
+    )
+    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
 
 
+
+from rest_framework.generics import ListAPIView
+from .serializers import PaymentHistorySerializer
+
+class PaymentHistoryView(ListAPIView):
+    serializer_class = PaymentHistorySerializer
+    
+    def get_queryset(self):
+        return PaymentHistory.objects.filter(user=self.request.user).order_by('-timestamp')

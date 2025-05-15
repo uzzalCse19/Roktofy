@@ -80,5 +80,11 @@ class BloodEventSerializer(serializers.ModelSerializer):
         fields = ['id', 'blood_type', 'message', 'required_date','location', 'creator', 'accepted_by', 'created_at', 'status']
         read_only_fields = ['creator', 'accepted_by', 'created_at']
 
+from .models import PaymentHistory
+
+class PaymentHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentHistory
+        fields = ['amount', 'transaction_id', 'status', 'timestamp', 'first_name', 'last_name']
 
      
