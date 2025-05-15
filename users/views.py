@@ -129,7 +129,7 @@ class DonorListView(generics.ListAPIView):
         ).filter(
             Q(user_type='donor') | Q(user_type='both')
         ).select_related('profile').only(
-            'id', 'first_name', 'last_name', 'email', 'address', 
+            'id', 'first_name', 'last_name', 'email', 'phone', 'address', 
             'last_donation_date', 'is_available',
             'profile__blood_type'
         )

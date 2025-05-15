@@ -119,7 +119,7 @@ class DonorListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ['id', 'full_name', 'email', 'blood_type','address','last_donation_date','is_available']
+        fields = ['id', 'full_name', 'email',  'phone','blood_type','address','last_donation_date','is_available']
     def get_full_name(self, obj):
         name = f"{obj.first_name or ''} {obj.last_name or ''}".strip()
         return name if name else obj.email
