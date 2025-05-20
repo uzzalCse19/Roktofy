@@ -4,8 +4,10 @@ from core.views import BloodRequestViewSet,PublicStatsView,UserDashboardView,Don
 
 router = DefaultRouter()
 router.register(r'blood-requests', BloodRequestViewSet, basename='blood-request')
+# router.register(r'donations', DonationViewSet, basename='donation')
+# router.register(r'blood-events', BloodEventViewSet, basename='blood-event')
+router.register(r'blood-events', BloodEventViewSet, basename='bloodevent')
 router.register(r'donations', DonationViewSet, basename='donation')
-router.register(r'blood-events', BloodEventViewSet, basename='blood-event')
 
 urlpatterns = router.urls + [
     # path('dashboard/', DashboardView.as_view(), name='dashboard'),

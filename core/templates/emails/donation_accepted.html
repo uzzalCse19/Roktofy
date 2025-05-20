@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blood Donation Accepted</title>
+</head>
+<body>
+    <h2>Your Blood Donation Request Has Been Accepted</h2>
+    <p>Dear {{ event.creator.first_name }},</p>
+    
+    <p>We're pleased to inform you that your blood donation request for blood type {{ event.blood_type }} has been accepted by a donor.</p>
+    
+    <h3>Donor Details:</h3>
+    <ul>
+        <li><strong>Name:</strong> {{ donor.first_name }} {{ donor.last_name }}</li>
+        <li><strong>Email:</strong> {{ donor.email }}</li>
+        <li><strong>Phone:</strong> {{ donor.phone }}</li>
+        <li><strong>Blood Type:</strong> {{ donor.blood_type }}</li>
+    </ul>
+    
+    <h3>Event Details:</h3>
+    <ul>
+        <li><strong>Location:</strong> {{ event.location }}</li>
+        <li><strong>Required Date:</strong> {{ event.required_date }}</li>
+        <li><strong>Message:</strong> {{ event.message }}</li>
+    </ul>
+    
+    <p>Please contact the donor to coordinate the donation process.</p>
+    
+    <p>Thank you for using our blood donation platform.</p>
+    
+    <p>Best regards,<br>The Blood Donation Team</p>
+</body>
+</html>

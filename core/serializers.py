@@ -231,11 +231,39 @@ class DonationSerializer(serializers.ModelSerializer):
                 )
         return data
 
+# class BloodEventSerializer(serializers.ModelSerializer):
+#     creator = serializers.ReadOnlyField(source='creator.email')
+#     accepted_by = serializers.SlugRelatedField(many=True,read_only=True,slug_field='email')
+
+#     class Meta:
+#         model = BloodEvent
+#         fields = ['id', 'blood_type', 'message', 'required_date','location', 'creator', 'accepted_by', 'created_at', 'status']
+#         read_only_fields = ['creator', 'accepted_by', 'created_at']
+
+# new BloodEventSerializer
+
+# serializers.py
 class BloodEventSerializer(serializers.ModelSerializer):
     creator = serializers.ReadOnlyField(source='creator.email')
-    accepted_by = serializers.SlugRelatedField(many=True,read_only=True,slug_field='email')
+    accepted_by = serializers.SlugRelatedField(many=True, read_only=True, slug_field='email')
+    is_accepted = serializers.SerializerMethodField()
+    can_accept = serializers.SerializerMethodField()
 
     class Meta:
         model = BloodEvent
-        fields = ['id', 'blood_type', 'message', 'required_date','location', 'creator', 'accepted_by', 'created_at', 'status']
-        read_only_fields = ['creator', 'accepted_by', 'created_at']
+        fields = ['id', 'blood_type', 'message', 'required_date', 'location', 
+                 'creator', 'accepted_by', 'created_at', 'status',
+                 'is_accepted', 'can_accept']
+        read_only_fields = ['creator', 'accepted_by', 'created_at', 'status']
+
+    def get_is_accepted(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.accepted_by.filter(id=request.user.id).exists()
+        return False
+
+    def get_can_accept(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user != obj.creator
+        return False
