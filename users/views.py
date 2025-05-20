@@ -83,9 +83,14 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ['get', 'patch', 'head', 'options']  
-
     def get_queryset(self):
-        return UserProfile.objects.filter(user=self.request.user)
+       if getattr(self, 'swagger_fake_view', False):  # <- এই লাইন চেক করে Swagger থেকে আসছে কিনা
+           return UserProfile.objects.none()  # ডামি empty queryset
+
+       return UserProfile.objects.filter(user=self.request.user)
+
+    # def get_queryset(self):
+    #     return UserProfile.objects.filter(user=self.request.user)
 
     def get_object(self):
         return self.request.user.profile
