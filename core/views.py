@@ -453,42 +453,12 @@ class UserDashboardView(APIView):
 
 
 
-# class BloodEventViewSet(viewsets.ModelViewSet):
-#     serializer_class = BloodEventSerializer
-#     permission_classes = [IsAuthenticated] 
-
-#     def get_queryset(self):
-#         return BloodEvent.objects.exclude(creator=self.request.user)
-
-#     def perform_create(self, serializer):
-#         serializer.save(creator=self.request.user)
-
-#     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-#     def accept(self, request, pk=None):
-#         event = self.get_object()
-#         if request.user == event.creator:
-#             return Response({'error': 'You cannot accept your own event.'}, status=status.HTTP_400_BAD_REQUEST)
-#         event.accepted_by.add(request.user)
-#         return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
-    
-#  new BloodEventViewSet
-
-# views.py
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-
 class BloodEventViewSet(viewsets.ModelViewSet):
     serializer_class = BloodEventSerializer
     permission_classes = [IsAuthenticated] 
 
     def get_queryset(self):
-        return BloodEvent.objects.all().order_by('-created_at')
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['request'] = self.request
-        return context
+        return BloodEvent.objects.exclude(creator=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
@@ -496,53 +466,95 @@ class BloodEventViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def accept(self, request, pk=None):
         event = self.get_object()
-        user = request.user
-        
-        if user == event.creator:
-            return Response({'error': 'You cannot accept your own event.'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-        
-        if event.accepted_by.filter(id=user.id).exists():
-            return Response({'error': 'You have already accepted this event.'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-        
-        # Add donor to accepted_by
-        event.accepted_by.add(user)
-        event.save()
-        
-        # Create donation record
-        Donation.objects.create(
-            donor=user,
-            request=event,
-            units_donated=1,  # Assuming 1 unit per acceptance
-            is_verified=False  # Default to unverified
-        )
-        
-        # Send email to event creator
-        self.send_acceptance_email(event, user)
-        
-        return Response({'success': 'You have accepted to donate blood for this event.'}, 
-                       status=status.HTTP_200_OK)
+        if request.user == event.creator:
+            return Response({'error': 'You cannot accept your own event.'}, status=status.HTTP_400_BAD_REQUEST)
+        event.accepted_by.add(request.user)
+        return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
     
-    def send_acceptance_email(self, event, donor):
-        subject = f"Blood Donation Accepted for Your Event"
-        html_message = render_to_string('emails/donation_accepted.html', {
-            'event': event,
-            'donor': donor,
-            'donor_profile': donor.profile if hasattr(donor, 'profile') else None
-        })
-        plain_message = strip_tags(html_message)
-        from_email = 'noreply@blooddonation.com'
-        to_email = event.creator.email
+
+from rest_framework.views import APIView
+from .models import ContactMessage
+from .serializers import ContactMessageSerializer
+
+class ContactMessageCreateView(APIView):
+    def post(self, request):
+        serializer = ContactMessageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Message sent successfully!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#  new BloodEventViewSet
+
+# # views.py
+# from django.core.mail import send_mail
+# from django.template.loader import render_to_string
+# from django.utils.html import strip_tags
+
+# class BloodEventViewSet(viewsets.ModelViewSet):
+#     serializer_class = BloodEventSerializer
+#     permission_classes = [IsAuthenticated] 
+
+#     def get_queryset(self):
+#         return BloodEvent.objects.all().order_by('-created_at')
+
+#     def get_serializer_context(self):
+#         context = super().get_serializer_context()
+#         context['request'] = self.request
+#         return context
+
+#     def perform_create(self, serializer):
+#         serializer.save(creator=self.request.user)
+
+#     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+#     def accept(self, request, pk=None):
+#         event = self.get_object()
+#         user = request.user
         
-        send_mail(
-            subject,
-            plain_message,
-            from_email,
-            [to_email],
-            html_message=html_message,
-            fail_silently=False,
-        )
+#         if user == event.creator:
+#             return Response({'error': 'You cannot accept your own event.'}, 
+#                           status=status.HTTP_400_BAD_REQUEST)
+        
+#         if event.accepted_by.filter(id=user.id).exists():
+#             return Response({'error': 'You have already accepted this event.'}, 
+#                           status=status.HTTP_400_BAD_REQUEST)
+        
+#         # Add donor to accepted_by
+#         event.accepted_by.add(user)
+#         event.save()
+        
+#         # Create donation record
+#         Donation.objects.create(
+#             donor=user,
+#             request=event,
+#             units_donated=1,  # Assuming 1 unit per acceptance
+#             is_verified=False  # Default to unverified
+#         )
+        
+#         # Send email to event creator
+#         self.send_acceptance_email(event, user)
+        
+#         return Response({'success': 'You have accepted to donate blood for this event.'}, 
+#                        status=status.HTTP_200_OK)
+    
+#     def send_acceptance_email(self, event, donor):
+#         subject = f"Blood Donation Accepted for Your Event"
+#         html_message = render_to_string('emails/donation_accepted.html', {
+#             'event': event,
+#             'donor': donor,
+#             'donor_profile': donor.profile if hasattr(donor, 'profile') else None
+#         })
+#         plain_message = strip_tags(html_message)
+#         from_email = 'noreply@blooddonation.com'
+#         to_email = event.creator.email
+        
+#         send_mail(
+#             subject,
+#             plain_message,
+#             from_email,
+#             [to_email],
+#             html_message=html_message,
+#             fail_silently=False,
+#         )
  
 from sslcommerz_lib import SSLCOMMERZ 
 

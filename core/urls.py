@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from core.views import BloodRequestViewSet,PublicStatsView,UserDashboardView,DonationViewSet,payment_success,PaymentHistoryView,payment_cancel,payment_fail, DashboardView,BloodEventViewSet,initiate_payment
+from core.views import BloodRequestViewSet,ContactMessageCreateView,PublicStatsView,UserDashboardView,DonationViewSet,payment_success,PaymentHistoryView,payment_cancel,payment_fail, DashboardView,BloodEventViewSet,initiate_payment
 
 router = DefaultRouter()
 router.register(r'blood-requests', BloodRequestViewSet, basename='blood-request')
@@ -21,6 +21,7 @@ urlpatterns = router.urls + [
     # path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('stats/public/', PublicStatsView.as_view(), name='public-stats'),
     path('dashboard/', UserDashboardView.as_view(), name='user-dashboard'),
+    path('contact/', ContactMessageCreateView.as_view(), name='contact-message'),
     # path('stats/dashboard/', dashboard_stats, name='dashboard-stats'),
     # path('events/', BloodEventListCreateView.as_view(), name='event-list-create'),
     # path('events/accept/', AcceptBloodEventView.as_view(), name='accept-event'),
