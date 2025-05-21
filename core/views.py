@@ -489,16 +489,28 @@ class UserDashboardView(APIView):
             )
 
 
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import BloodEvent
+from .serializers import BloodEventSerializer
 
 class BloodEventViewSet(viewsets.ModelViewSet):
     serializer_class = BloodEventSerializer
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return BloodEvent.objects.exclude(creator=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_events(self, request):
+        events = BloodEvent.objects.filter(creator=request.user)
+        serializer = self.get_serializer(events, many=True)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def accept(self, request, pk=None):
@@ -507,7 +519,7 @@ class BloodEventViewSet(viewsets.ModelViewSet):
             return Response({'error': 'You cannot accept your own event.'}, status=status.HTTP_400_BAD_REQUEST)
         event.accepted_by.add(request.user)
         return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
-    
+
 
 from rest_framework.views import APIView
 from .models import ContactMessage
