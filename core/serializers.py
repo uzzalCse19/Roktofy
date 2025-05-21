@@ -48,17 +48,20 @@ from rest_framework import serializers
 from core.models import Donation
 
 class DonationSerializer(serializers.ModelSerializer):
-    donor = serializers.SerializerMethodField()
-    request_info = serializers.SerializerMethodField()
+    donor = serializers.SerializerMethodField(read_only=True)
+    request_info = serializers.SerializerMethodField(read_only=True)
+    request = serializers.PrimaryKeyRelatedField(
+        queryset=BloodRequest.objects.all(), write_only=True
+    )
     units_donated = serializers.IntegerField(min_value=1, default=1)
-    
+
     class Meta:
         model = Donation
         fields = [
-            'id', 'donor', 'request_info', 'units_donated',
+            'id', 'donor', 'request', 'request_info', 'units_donated',
             'donation_date', 'is_verified'
         ]
-        read_only_fields = ['donation_date', 'is_verified']
+        read_only_fields = ['donation_date', 'is_verified', 'donor', 'request_info']
 
     def get_donor(self, obj):
         return {
@@ -82,11 +85,10 @@ class DonationSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        if self.instance and 'units_donated' in data:
-            if data['units_donated'] < 1:
-                raise serializers.ValidationError(
-                    {"units_donated": "At least 1 unit must be donated."}
-                )
+        if data.get('units_donated', 1) < 1:
+            raise serializers.ValidationError(
+                {"units_donated": "At least 1 unit must be donated."}
+            )
         return data
 
 from .models import PaymentHistory
