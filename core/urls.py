@@ -3,11 +3,11 @@ from rest_framework.routers import DefaultRouter
 from core.views import BloodRequestViewSet,ContactMessageCreateView,PublicStatsView,UserDashboardView,DonationViewSet,payment_success,PaymentHistoryView,payment_cancel,payment_fail, DashboardView,BloodEventViewSet,initiate_payment
 
 router = DefaultRouter()
-router.register(r'blood-requests', BloodRequestViewSet, basename='blood-request')
-# router.register(r'donations', DonationViewSet, basename='donation')
-# router.register(r'blood-events', BloodEventViewSet, basename='blood-event')
+router.register("blood-requests", BloodRequestViewSet, basename="blood-requests")
+# router.register(r'donations', DonationViewSet, basename='donations')
+# router.register(r'blood-events', BloodEventViewSet, basename='blood-events')
 router.register(r'blood-events', BloodEventViewSet, basename='bloodevent')
-router.register(r'donations', DonationViewSet, basename='donation')
+router.register(r'donations', DonationViewSet, basename='donations')
 
 urlpatterns = router.urls + [
     # path('dashboard/', DashboardView.as_view(), name='dashboard'),
