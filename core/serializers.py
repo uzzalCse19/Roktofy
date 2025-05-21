@@ -44,6 +44,50 @@ class BloodRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid blood group.")
         return value
     
+from rest_framework import serializers
+from core.models import Donation
+
+class DonationSerializer(serializers.ModelSerializer):
+    donor = serializers.SerializerMethodField()
+    request_info = serializers.SerializerMethodField()
+    units_donated = serializers.IntegerField(min_value=1, default=1)
+    
+    class Meta:
+        model = Donation
+        fields = [
+            'id', 'donor', 'request_info', 'units_donated',
+            'donation_date', 'is_verified'
+        ]
+        read_only_fields = ['donation_date', 'is_verified']
+
+    def get_donor(self, obj):
+        return {
+            'id': obj.donor.id,
+            'name': f"{obj.donor.first_name} {obj.donor.last_name}",
+            'email': obj.donor.email,
+            'phone': obj.donor.phone,
+            'blood_type': obj.donor.profile.blood_type if hasattr(obj.donor, 'profile') else None
+        }
+
+    def get_request_info(self, obj):
+        if not hasattr(obj, 'request'):
+            return None
+        return {
+            'id': obj.request.id,
+            'blood_type': obj.request.blood_type,
+            'hospital': obj.request.hospital,
+            'location': obj.request.location,
+            'urgency': obj.request.urgency,
+            'status': obj.request.status
+        }
+
+    def validate(self, data):
+        if self.instance and 'units_donated' in data:
+            if data['units_donated'] < 1:
+                raise serializers.ValidationError(
+                    {"units_donated": "At least 1 unit must be donated."}
+                )
+        return data
 
 from .models import PaymentHistory
 
@@ -186,50 +230,6 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
 #         }
 
 
-from rest_framework import serializers
-from core.models import Donation
-
-class DonationSerializer(serializers.ModelSerializer):
-    donor = serializers.SerializerMethodField()
-    request_info = serializers.SerializerMethodField()
-    units_donated = serializers.IntegerField(min_value=1, default=1)
-    
-    class Meta:
-        model = Donation
-        fields = [
-            'id', 'donor', 'request_info', 'units_donated',
-            'donation_date', 'is_verified'
-        ]
-        read_only_fields = ['donation_date', 'is_verified']
-
-    def get_donor(self, obj):
-        return {
-            'id': obj.donor.id,
-            'name': f"{obj.donor.first_name} {obj.donor.last_name}",
-            'email': obj.donor.email,
-            'phone': obj.donor.phone,
-            'blood_type': obj.donor.profile.blood_type if hasattr(obj.donor, 'profile') else None
-        }
-
-    def get_request_info(self, obj):
-        if not hasattr(obj, 'request'):
-            return None
-        return {
-            'id': obj.request.id,
-            'blood_type': obj.request.blood_type,
-            'hospital': obj.request.hospital,
-            'location': obj.request.location,
-            'urgency': obj.request.urgency,
-            'status': obj.request.status
-        }
-
-    def validate(self, data):
-        if self.instance and 'units_donated' in data:
-            if data['units_donated'] < 1:
-                raise serializers.ValidationError(
-                    {"units_donated": "At least 1 unit must be donated."}
-                )
-        return data
 
 class BloodEventSerializer(serializers.ModelSerializer):
     creator = serializers.ReadOnlyField(source='creator.email')
