@@ -43,6 +43,42 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(requester=self.request.user)
         return queryset.select_related('requester')
 
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def for_donor(self, request):
+        donor = request.user
+        if not donor.is_available:
+            return Response([], status=200)
+
+        blood_type = getattr(donor.profile, 'blood_type', None)
+        if not blood_type:
+            return Response([], status=200)
+
+        requests = BloodRequest.objects.filter(
+            blood_type=blood_type,
+            status='pending'
+        ).exclude(requester=donor).select_related('requester')
+
+        serializer = self.get_serializer(requests, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def cancel(self, request, pk=None):
+        blood_request = self.get_object()
+        donor = request.user
+
+        if blood_request.status == 'accepted':
+            donation = Donation.objects.filter(donor=donor, request=blood_request).first()
+            if not donation:
+                return Response({'error': 'This request was accepted by someone else.'}, status=400)
+
+            donation.delete()
+            blood_request.status = 'pending'
+            blood_request.save(update_fields=['status'])
+            donor.is_available = True
+            donor.save(update_fields=['is_available'])
+
+        return Response({'message': 'Request cancelled successfully'})
+
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def accept(self, request, pk=None):
         blood_request = self.get_object()
@@ -79,6 +115,7 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
             {'message': 'Request accepted successfully'},
             status=status.HTTP_200_OK
         )
+
 
 
 class DonationViewSet(viewsets.ModelViewSet):
