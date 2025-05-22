@@ -34,19 +34,20 @@ class BloodRequest(models.Model):
         ordering = ['-created_at']
 
 
-class Donation(models.Model):
-    donor = models.ForeignKey( User, on_delete=models.CASCADE, related_name='donations')
-    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='donations')
-    donation_date = models.DateTimeField(auto_now_add=True)
-    units_donated = models.PositiveIntegerField(default=1)
-    is_verified = models.BooleanField(default=True)
+# class Donation(models.Model):
+#     donor = models.ForeignKey( User, on_delete=models.CASCADE, related_name='donations')
+#     request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='donations')
+#     donation_date = models.DateTimeField(auto_now_add=True)
+#     units_donated = models.PositiveIntegerField(default=1)
+#     is_verified = models.BooleanField(default=True)
 
-    def __str__(self):
-        return f"{self.donor.email} donated {self.units_donated} unit(s)"
+#     def __str__(self):
+#         return f"{self.donor.email} donated {self.units_donated} unit(s)"
 
-    class Meta:
-        unique_together = ('donor', 'request')  
-        ordering = ['-donation_date']
+#     class Meta:
+#         unique_together = ('donor', 'request')  
+#         ordering = ['-donation_date']
+
 
 class BloodEvent(models.Model):
     STATUS_CHOICES = [
@@ -64,11 +65,39 @@ class BloodEvent(models.Model):
     accepted_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='accepted_events', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending') 
+    
+
     def __str__(self):
         return f"{self.creator.email} needs {self.blood_type} on {self.required_date}"
 
+class Donation(models.Model):
+    donor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='donations')
+    request = models.ForeignKey(
+        BloodRequest, 
+        on_delete=models.CASCADE, 
+        related_name='donations',
+        null=True,  # Make nullable for event donations
+        blank=True
+    )
+    event = models.ForeignKey(  # New field for events
+        BloodEvent,
+        on_delete=models.CASCADE,
+        related_name='donations',
+        null=True,
+        blank=True
+    )
+    donation_date = models.DateTimeField(auto_now_add=True)
+    units_donated = models.PositiveIntegerField(default=1)
+    is_verified = models.BooleanField(default=True)
 
-# models.py
+    class Meta:
+        unique_together = [
+            ('donor', 'request'),  # Maintains existing constraint
+            ('donor', 'event')    # New constraint for events
+        ]
+        ordering = ['-donation_date']
+
+
 from django.db import models
 from django.contrib.auth import get_user_model
 

@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from core.models import  Donation,BloodRequest,BloodEvent
 from core.serializers import BloodRequestSerializer,DonationSerializer,BloodEventSerializer
-from core.filters import BloodRequestFilter
+from core.filters import BloodRequestFilter,DonationFilter
 from core.paginations import BloodRequestPagination
 from core.permissions import CanRequestBlood, CanDonateBlood
 from django.contrib.auth import get_user_model
@@ -118,24 +118,72 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
 
 
 
+# class DonationViewSet(viewsets.ModelViewSet):
+#     serializer_class = DonationSerializer
+#     permission_classes = [IsAuthenticated] 
+#     filterset_fields = ['request__status']
+#     search_fields = ['donor__email', 'request__blood_type']
+#     lookup_field = 'pk'
+
+#     def get_queryset(self):
+#         queryset = Donation.objects.select_related(
+#             'donor',
+#             'request',
+#             'request__requester'
+#         ).prefetch_related('donor__profile')
+
+#         if not self.request.user.is_staff:
+#             queryset = queryset.filter(donor=self.request.user)
+#         return queryset
+
+#     def perform_create(self, serializer):
+#         serializer.save(donor=self.request.user)
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.filter_queryset(self.get_queryset())
+#         page = self.paginate_queryset(queryset)
+#         if page is not None:
+#             serializer = self.get_serializer(page, many=True)
+#             return self.get_paginated_response(serializer.data)
+#         serializer = self.get_serializer(queryset, many=True)
+#         return Response(serializer.data)
+
+#     def retrieve(self, request, *args, **kwargs):
+#         instance = self.get_queryset().get(pk=kwargs['pk'])
+#         serializer = self.get_serializer(instance)
+#         return Response(serializer.data)
+    
+    # new add Donation view
+
+
 class DonationViewSet(viewsets.ModelViewSet):
     serializer_class = DonationSerializer
-    permission_classes = [IsAuthenticated] 
-    filterset_fields = ['request__status']
-    search_fields = ['donor__email', 'request__blood_type']
+    permission_classes = [IsAuthenticated]
+    
+    filterset_class = DonationFilter 
+    
+    # Add event__blood_type to existing search
+    search_fields = [
+        'donor__email', 
+        'request__blood_type',
+        'event__blood_type'
+    ]
     lookup_field = 'pk'
 
     def get_queryset(self):
         queryset = Donation.objects.select_related(
             'donor',
             'request',
-            'request__requester'
+            'request__requester',
+            'event',  # New relation
+            'event__creator'  # New relation
         ).prefetch_related('donor__profile')
 
         if not self.request.user.is_staff:
             queryset = queryset.filter(donor=self.request.user)
         return queryset
 
+    # Keep perform_create unchanged - it will work with new serializer
     def perform_create(self, serializer):
         serializer.save(donor=self.request.user)
 
@@ -152,6 +200,37 @@ class DonationViewSet(viewsets.ModelViewSet):
         instance = self.get_queryset().get(pk=kwargs['pk'])
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+    
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import BloodEvent
+from .serializers import BloodEventSerializer
+
+class BloodEventViewSet(viewsets.ModelViewSet):
+    serializer_class = BloodEventSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return BloodEvent.objects.exclude(creator=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(creator=self.request.user)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_events(self, request):
+        events = BloodEvent.objects.filter(creator=request.user)
+        serializer = self.get_serializer(events, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def accept(self, request, pk=None):
+        event = self.get_object()
+        if request.user == event.creator:
+            return Response({'error': 'You cannot accept your own event.'}, status=status.HTTP_400_BAD_REQUEST)
+        event.accepted_by.add(request.user)
+        return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
 
 from django.db import transaction
 # class DashboardView(APIView):
@@ -489,36 +568,6 @@ class UserDashboardView(APIView):
             )
 
 
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from .models import BloodEvent
-from .serializers import BloodEventSerializer
-
-class BloodEventViewSet(viewsets.ModelViewSet):
-    serializer_class = BloodEventSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return BloodEvent.objects.exclude(creator=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
-
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    def my_events(self, request):
-        events = BloodEvent.objects.filter(creator=request.user)
-        serializer = self.get_serializer(events, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def accept(self, request, pk=None):
-        event = self.get_object()
-        if request.user == event.creator:
-            return Response({'error': 'You cannot accept your own event.'}, status=status.HTTP_400_BAD_REQUEST)
-        event.accepted_by.add(request.user)
-        return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
 
 
 from rest_framework.views import APIView
