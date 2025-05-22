@@ -224,14 +224,34 @@ class BloodEventViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(events, many=True)
         return Response(serializer.data)
 
+    # @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    # def accept(self, request, pk=None):
+    #     event = self.get_object()
+    #     if request.user == event.creator:
+    #         return Response({'error': 'You cannot accept your own event.'}, status=status.HTTP_400_BAD_REQUEST)
+    #     event.accepted_by.add(request.user)
+    #     return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def accept(self, request, pk=None):
         event = self.get_object()
         if request.user == event.creator:
             return Response({'error': 'You cannot accept your own event.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create donation record
+        donation = Donation.objects.create(
+            donor=request.user,
+            event=event,
+            units_donated=1
+        )
+        
+        # Add user to accepted_by
         event.accepted_by.add(request.user)
-        return Response({'success': 'You have accepted to donate blood for this event.'}, status=status.HTTP_200_OK)
-
+        
+        return Response({
+            'success': 'You have accepted to donate blood for this event.',
+            'donation_id': donation.id
+        }, status=status.HTTP_200_OK)
+    
 from django.db import transaction
 # class DashboardView(APIView):
 #     permission_classes = [IsAuthenticated]
