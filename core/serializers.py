@@ -92,20 +92,108 @@ from core.models import Donation
 #         return data
 
 # new add Donation Serializer
+# class DonationSerializer(serializers.ModelSerializer):
+#     donor = serializers.SerializerMethodField(read_only=True)
+#     request_info = serializers.SerializerMethodField(read_only=True)
+#     event_info = serializers.SerializerMethodField(read_only=True)  # New field
+    
+#     # Keep existing request field but make it optional
+#     request = serializers.PrimaryKeyRelatedField(
+#         queryset=BloodRequest.objects.all(), 
+#         write_only=True,
+#         required=False,
+#         allow_null=True
+#     )
+    
+#     # Add new event field
+#     event = serializers.PrimaryKeyRelatedField(
+#         queryset=BloodEvent.objects.all(),
+#         write_only=True,
+#         required=False,
+#         allow_null=True
+#     )
+    
+#     units_donated = serializers.IntegerField(min_value=1, default=1)
+
+#     class Meta:
+#         model = Donation
+#         fields = [
+#             'id', 'donor', 'request', 'event', 'request_info', 'event_info',
+#             'units_donated', 'donation_date', 'is_verified'
+#         ]
+#         read_only_fields = ['donation_date', 'is_verified', 'donor', 'request_info', 'event_info']
+
+#     # Keep existing get_donor method unchanged
+#     def get_donor(self, obj):
+#         return {
+#             'id': obj.donor.id,
+#             'name': f"{obj.donor.first_name} {obj.donor.last_name}",
+#             'email': obj.donor.email,
+#             'phone': obj.donor.phone,
+#             'blood_type': obj.donor.profile.blood_type if hasattr(obj.donor, 'profile') else None
+#         }
+
+#     # Keep existing request_info method unchanged
+#     def get_request_info(self, obj):
+#         if not obj.request:
+#             return None
+#         return {
+#             'id': obj.request.id,
+#             'blood_type': obj.request.blood_type,
+#             'hospital': obj.request.hospital,
+#             'location': obj.request.location,
+#             'urgency': obj.request.urgency,
+#             'status': obj.request.status
+#         }
+
+#     # Add new method for event info
+#     def get_event_info(self, obj):
+#         if not obj.event:
+#             return None
+#         return {
+#             'id': obj.event.id,
+#             'blood_type': obj.event.blood_type,
+#             'location': obj.event.location,
+#             'required_date': obj.event.required_date,
+#             'status': obj.event.status
+#         }
+
+#     def validate(self, data):
+#         # Keep existing units validation
+#         if data.get('units_donated', 1) < 1:
+#             raise serializers.ValidationError(
+#                 {"units_donated": "At least 1 unit must be donated."}
+#             )
+        
+#         # Add new validation for request/event exclusivity
+#         if not data.get('request') and not data.get('event'):
+#             raise serializers.ValidationError(
+#                 "Either request or event must be specified."
+#             )
+            
+#         if data.get('request') and data.get('event'):
+#             raise serializers.ValidationError(
+#                 "Cannot specify both request and event."
+#             )
+            
+#         return data
+
+# new add 11:57
+
 class DonationSerializer(serializers.ModelSerializer):
     donor = serializers.SerializerMethodField(read_only=True)
     request_info = serializers.SerializerMethodField(read_only=True)
-    event_info = serializers.SerializerMethodField(read_only=True)  # New field
+    event_info = serializers.SerializerMethodField(read_only=True)
     
-    # Keep existing request field but make it optional
+    # ✅ Add this line to show blood_type in response
+    blood_type = serializers.SerializerMethodField(read_only=True)
+
     request = serializers.PrimaryKeyRelatedField(
         queryset=BloodRequest.objects.all(), 
         write_only=True,
         required=False,
         allow_null=True
     )
-    
-    # Add new event field
     event = serializers.PrimaryKeyRelatedField(
         queryset=BloodEvent.objects.all(),
         write_only=True,
@@ -119,11 +207,11 @@ class DonationSerializer(serializers.ModelSerializer):
         model = Donation
         fields = [
             'id', 'donor', 'request', 'event', 'request_info', 'event_info',
-            'units_donated', 'donation_date', 'is_verified'
+            'units_donated', 'donation_date', 'is_verified',
+            'blood_type'  # ✅ Include here
         ]
-        read_only_fields = ['donation_date', 'is_verified', 'donor', 'request_info', 'event_info']
+        read_only_fields = ['donation_date', 'is_verified', 'donor', 'request_info', 'event_info', 'blood_type']
 
-    # Keep existing get_donor method unchanged
     def get_donor(self, obj):
         return {
             'id': obj.donor.id,
@@ -133,7 +221,6 @@ class DonationSerializer(serializers.ModelSerializer):
             'blood_type': obj.donor.profile.blood_type if hasattr(obj.donor, 'profile') else None
         }
 
-    # Keep existing request_info method unchanged
     def get_request_info(self, obj):
         if not obj.request:
             return None
@@ -146,7 +233,6 @@ class DonationSerializer(serializers.ModelSerializer):
             'status': obj.request.status
         }
 
-    # Add new method for event info
     def get_event_info(self, obj):
         if not obj.event:
             return None
@@ -158,24 +244,27 @@ class DonationSerializer(serializers.ModelSerializer):
             'status': obj.event.status
         }
 
+    # ✅ Method to return blood_type from request or event
+    def get_blood_type(self, obj):
+        if obj.request and obj.request.blood_type:
+            return obj.request.blood_type
+        elif obj.event and obj.event.blood_type:
+            return obj.event.blood_type
+        return None
+
     def validate(self, data):
-        # Keep existing units validation
         if data.get('units_donated', 1) < 1:
             raise serializers.ValidationError(
                 {"units_donated": "At least 1 unit must be donated."}
             )
-        
-        # Add new validation for request/event exclusivity
         if not data.get('request') and not data.get('event'):
             raise serializers.ValidationError(
                 "Either request or event must be specified."
             )
-            
         if data.get('request') and data.get('event'):
             raise serializers.ValidationError(
                 "Cannot specify both request and event."
             )
-            
         return data
 
 from .models import PaymentHistory
