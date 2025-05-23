@@ -4,6 +4,12 @@ from users.views import (
     UserProfileViewSet, 
     UserViewSet, PublicDonorListView, RequestBloodView,check_profile_complete,DonorListView,UserProfileUpdateView,UserUpdateView_two
 )
+from .views import (
+    AdminDashboardView,
+    AdminUserManagementView,
+    AdminBloodRequestView,
+    AdminDonationView
+)
 
 router = DefaultRouter()
 router.register('user-list', UserViewSet, basename='user')
@@ -18,5 +24,14 @@ urlpatterns = [
     path('profile/update/', UserProfileUpdateView.as_view(), name='profile-update'),
     path('me/update/', UserUpdateView_two.as_view(), name='user-update'), 
     path('api/check-profile/', check_profile_complete, name='check-profile'),
+    path('admin/stats/', AdminDashboardView.as_view()),
+    path('admin/users/', AdminUserManagementView.as_view()),
+    path('admin/users/<int:user_id>/', AdminUserManagementView.as_view()),
+    path('admin/blood-requests/', AdminBloodRequestView.as_view()),
+    path('admin/blood-requests/<int:req_id>/', AdminBloodRequestView.as_view()),
+    path('admin/donations/', AdminDonationView.as_view()),
+    path('admin/donations/<int:donation_id>/', AdminDonationView.as_view()),
 ]
+
+
  

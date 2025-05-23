@@ -12,24 +12,7 @@ blood_type_CHOICES = [
     ('AB+', 'AB+'), ('AB-', 'AB-'),
 ]
 
-# class UserProfileSerializer(serializers.ModelSerializer):
-#     email = serializers.EmailField(source='user.email', read_only=True)
-#     phone = serializers.CharField(source='user.phone', read_only=True)
-#     user_type = serializers.CharField(source='user.user_type', read_only=True)
-#     is_available = serializers.BooleanField(source='user.is_available', read_only=True)
-#     avatar=serializers.ImageField(required=False, allow_null=True)
-    
-#     class Meta:
-#         model = UserProfile
-#         fields = [
-#             'id', 'email', 'phone', 'user_type', 'blood_type',
-#             'health_conditions', 'avatar', 'is_available'
-#         ]
-#     def validate_blood_type(self, value):
-#         valid_groups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
-#         if value and value not in valid_groups:
-#             raise serializers.ValidationError("Invalid blood group")
-#         return value
+
     
 from rest_framework import serializers
 from users.models import UserProfile, User
@@ -201,3 +184,22 @@ class UserUpdateSerializer_two(serializers.ModelSerializer):
 #         token['is_verified'] = user.is_verified
 #         token['email'] = user.email
 #         return token
+
+# class UserProfileSerializer(serializers.ModelSerializer):
+#     email = serializers.EmailField(source='user.email', read_only=True)
+#     phone = serializers.CharField(source='user.phone', read_only=True)
+#     user_type = serializers.CharField(source='user.user_type', read_only=True)
+#     is_available = serializers.BooleanField(source='user.is_available', read_only=True)
+#     avatar=serializers.ImageField(required=False, allow_null=True)
+    
+#     class Meta:
+#         model = UserProfile
+#         fields = [
+#             'id', 'email', 'phone', 'user_type', 'blood_type',
+#             'health_conditions', 'avatar', 'is_available'
+#         ]
+#     def validate_blood_type(self, value):
+#         valid_groups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
+#         if value and value not in valid_groups:
+#             raise serializers.ValidationError("Invalid blood group")
+#         return value

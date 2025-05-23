@@ -21,7 +21,34 @@ from django.conf import settings as main_settings
 from django.http import HttpResponseRedirect
 from core.models import PaymentHistory
 User = get_user_model()
+from django.db import transaction
+from django.db.models import Count
+from django.utils import timezone
+from rest_framework.views import APIView
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from users.models import User
+from core.models import BloodRequest, Donation, BloodEvent
+from .serializers import BloodRequestSerializer, DonationSerializer
+
 import uuid
+from django.db import transaction
+
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.db import transaction
+from django.utils import timezone
+
+from users.models import User
+from core.models import BloodRequest, Donation, BloodEvent
+from core.serializers import BloodRequestSerializer, DonationSerializer
+
+
 
 
 
@@ -118,42 +145,6 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
 
 
 
-# class DonationViewSet(viewsets.ModelViewSet):
-#     serializer_class = DonationSerializer
-#     permission_classes = [IsAuthenticated] 
-#     filterset_fields = ['request__status']
-#     search_fields = ['donor__email', 'request__blood_type']
-#     lookup_field = 'pk'
-
-#     def get_queryset(self):
-#         queryset = Donation.objects.select_related(
-#             'donor',
-#             'request',
-#             'request__requester'
-#         ).prefetch_related('donor__profile')
-
-#         if not self.request.user.is_staff:
-#             queryset = queryset.filter(donor=self.request.user)
-#         return queryset
-
-#     def perform_create(self, serializer):
-#         serializer.save(donor=self.request.user)
-
-#     def list(self, request, *args, **kwargs):
-#         queryset = self.filter_queryset(self.get_queryset())
-#         page = self.paginate_queryset(queryset)
-#         if page is not None:
-#             serializer = self.get_serializer(page, many=True)
-#             return self.get_paginated_response(serializer.data)
-#         serializer = self.get_serializer(queryset, many=True)
-#         return Response(serializer.data)
-
-#     def retrieve(self, request, *args, **kwargs):
-#         instance = self.get_queryset().get(pk=kwargs['pk'])
-#         serializer = self.get_serializer(instance)
-#         return Response(serializer.data)
-    
-    # new add Donation view
 
 
 class DonationViewSet(viewsets.ModelViewSet):
@@ -252,109 +243,6 @@ class BloodEventViewSet(viewsets.ModelViewSet):
             'donation_id': donation.id
         }, status=status.HTTP_200_OK)
     
-from django.db import transaction
-# class DashboardView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         user = request.user
-#         dashboard = {}
-
-#         # Get user profile and blood type if available
-#         profile = getattr(user, 'profile', None)
-#         blood_type = profile.blood_type if profile else None
-#         dashboard['blood_type'] = blood_type
-
-#         # Recipient Dashboard Info
-#         if user.user_type in ['recipient', 'both']:
-#             recipient_requests = BloodRequest.objects.filter(
-#                 requester=user
-#             ).select_related('requester').order_by('-created_at')
-
-#             dashboard['total_requests'] = recipient_requests.count()
-#             dashboard['pending_requests'] = recipient_requests.filter(status='pending').count()
-#             dashboard['my_requests'] = BloodRequestSerializer(
-#                 recipient_requests[:10], many=True
-#             ).data
-
-#         # Donor Dashboard Info
-#         if user.user_type in ['donor', 'both'] and blood_type:
-#             donations = Donation.objects.filter(
-#                 donor=user
-#             ).select_related(
-#                 'donor', 'request', 'request__requester'
-#             ).order_by('-donation_date')
-
-#             verified_donations = donations.filter(is_verified=True)
-
-#             dashboard['completed_donations'] = verified_donations.count()
-#             dashboard['last_donation_date'] = (
-#                 verified_donations.first().donation_date if verified_donations.exists() else None
-#             )
-#             dashboard['donation_history'] = DonationSerializer(
-#                 donations[:10], many=True
-#             ).data
-
-#             # Available blood requests for this donor’s blood type
-#             available_requests = BloodRequest.objects.filter(
-#                 status='pending',
-#                 blood_type=blood_type
-#             ).exclude(requester=user).select_related('requester').order_by('-created_at')[:10]
-
-#             dashboard['available_requests'] = BloodRequestSerializer(
-#                 available_requests, many=True
-#             ).data
-
-#         return Response(dashboard)
-
-#     def post(self, request):
-#         user = request.user
-#         request_id = request.data.get('request_id')
-
-#         if not request_id:
-#             return Response({'error': 'Request ID required'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         try:
-#             with transaction.atomic():
-#                 blood_request = BloodRequest.objects.select_for_update().get(
-#                     id=request_id,
-#                     status='pending'
-#                 )
-
-#                 # Create the donation record
-#                 Donation.objects.create(
-#                     donor=user,
-#                     recipient=blood_request.requester,
-#                     blood_type=blood_request.blood_type,
-#                     request=blood_request,
-#                     status='accepted'
-#                 )
-
-#                 # Update the request status
-#                 blood_request.status = 'accepted'
-#                 blood_request.save(update_fields=['status'])
-
-#                 # Set donor availability to False
-#                 if user.is_available:
-#                     user.is_available = False
-#                     user.save(update_fields=['is_available'])
-
-#             return Response({'message': 'Request accepted successfully'})
-
-#         except BloodRequest.DoesNotExist:
-#             return Response({'error': 'Invalid request ID'}, status=status.HTTP_404_NOT_FOUND)
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from django.db import transaction
-from django.utils import timezone
-
-from users.models import User
-from core.models import BloodRequest, Donation, BloodEvent
-from core.serializers import BloodRequestSerializer, DonationSerializer
-
 
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
@@ -447,17 +335,6 @@ class DashboardView(APIView):
         except BloodRequest.DoesNotExist:
             return Response({'error': 'Invalid request ID'}, status=status.HTTP_404_NOT_FOUND)
 
-from django.db import transaction
-from django.db.models import Count
-from django.utils import timezone
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from users.models import User
-from core.models import BloodRequest, Donation, BloodEvent
-from .serializers import BloodRequestSerializer, DonationSerializer
 
 # Public statistics endpoint (no authentication required)
 class PublicStatsView(APIView):
@@ -601,79 +478,7 @@ class ContactMessageCreateView(APIView):
             serializer.save()
             return Response({"message": "Message sent successfully!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#  new BloodEventViewSet
 
-# # views.py
-# from django.core.mail import send_mail
-# from django.template.loader import render_to_string
-# from django.utils.html import strip_tags
-
-# class BloodEventViewSet(viewsets.ModelViewSet):
-#     serializer_class = BloodEventSerializer
-#     permission_classes = [IsAuthenticated] 
-
-#     def get_queryset(self):
-#         return BloodEvent.objects.all().order_by('-created_at')
-
-#     def get_serializer_context(self):
-#         context = super().get_serializer_context()
-#         context['request'] = self.request
-#         return context
-
-#     def perform_create(self, serializer):
-#         serializer.save(creator=self.request.user)
-
-#     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-#     def accept(self, request, pk=None):
-#         event = self.get_object()
-#         user = request.user
-        
-#         if user == event.creator:
-#             return Response({'error': 'You cannot accept your own event.'}, 
-#                           status=status.HTTP_400_BAD_REQUEST)
-        
-#         if event.accepted_by.filter(id=user.id).exists():
-#             return Response({'error': 'You have already accepted this event.'}, 
-#                           status=status.HTTP_400_BAD_REQUEST)
-        
-#         # Add donor to accepted_by
-#         event.accepted_by.add(user)
-#         event.save()
-        
-#         # Create donation record
-#         Donation.objects.create(
-#             donor=user,
-#             request=event,
-#             units_donated=1,  # Assuming 1 unit per acceptance
-#             is_verified=False  # Default to unverified
-#         )
-        
-#         # Send email to event creator
-#         self.send_acceptance_email(event, user)
-        
-#         return Response({'success': 'You have accepted to donate blood for this event.'}, 
-#                        status=status.HTTP_200_OK)
-    
-#     def send_acceptance_email(self, event, donor):
-#         subject = f"Blood Donation Accepted for Your Event"
-#         html_message = render_to_string('emails/donation_accepted.html', {
-#             'event': event,
-#             'donor': donor,
-#             'donor_profile': donor.profile if hasattr(donor, 'profile') else None
-#         })
-#         plain_message = strip_tags(html_message)
-#         from_email = 'noreply@blooddonation.com'
-#         to_email = event.creator.email
-        
-#         send_mail(
-#             subject,
-#             plain_message,
-#             from_email,
-#             [to_email],
-#             html_message=html_message,
-#             fail_silently=False,
-#         )
- 
 from sslcommerz_lib import SSLCOMMERZ 
 
 @api_view(['POST'])
@@ -714,20 +519,6 @@ def initiate_payment(request):
     return Response({"error": "Payment initiation failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @api_view(['POST'])
-# def payment_success(request):
-#     print("Inside success")
-#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
-
-
-# @api_view(['POST'])
-# def payment_cancel(request):
-#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
-
-# @api_view(['POST'])
-# def payment_fail(request):
-#     print("Inside fail")
-#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/fail/")
 
 # views.py
 @api_view(['POST'])
@@ -1100,3 +891,223 @@ from core.models import BloodRequest, Donation, BloodEvent
 
  
 
+
+# class DonationViewSet(viewsets.ModelViewSet):
+#     serializer_class = DonationSerializer
+#     permission_classes = [IsAuthenticated] 
+#     filterset_fields = ['request__status']
+#     search_fields = ['donor__email', 'request__blood_type']
+#     lookup_field = 'pk'
+
+#     def get_queryset(self):
+#         queryset = Donation.objects.select_related(
+#             'donor',
+#             'request',
+#             'request__requester'
+#         ).prefetch_related('donor__profile')
+
+#         if not self.request.user.is_staff:
+#             queryset = queryset.filter(donor=self.request.user)
+#         return queryset
+
+#     def perform_create(self, serializer):
+#         serializer.save(donor=self.request.user)
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.filter_queryset(self.get_queryset())
+#         page = self.paginate_queryset(queryset)
+#         if page is not None:
+#             serializer = self.get_serializer(page, many=True)
+#             return self.get_paginated_response(serializer.data)
+#         serializer = self.get_serializer(queryset, many=True)
+#         return Response(serializer.data)
+
+#     def retrieve(self, request, *args, **kwargs):
+#         instance = self.get_queryset().get(pk=kwargs['pk'])
+#         serializer = self.get_serializer(instance)
+#         return Response(serializer.data)
+    
+    # new add Donation view
+
+# @api_view(['POST'])
+# def payment_success(request):
+#     print("Inside success")
+#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
+
+
+# @api_view(['POST'])
+# def payment_cancel(request):
+#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
+
+# @api_view(['POST'])
+# def payment_fail(request):
+#     print("Inside fail")
+#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/fail/")
+
+
+#  new BloodEventViewSet
+
+# # views.py
+# from django.core.mail import send_mail
+# from django.template.loader import render_to_string
+# from django.utils.html import strip_tags
+
+# class BloodEventViewSet(viewsets.ModelViewSet):
+#     serializer_class = BloodEventSerializer
+#     permission_classes = [IsAuthenticated] 
+
+#     def get_queryset(self):
+#         return BloodEvent.objects.all().order_by('-created_at')
+
+#     def get_serializer_context(self):
+#         context = super().get_serializer_context()
+#         context['request'] = self.request
+#         return context
+
+#     def perform_create(self, serializer):
+#         serializer.save(creator=self.request.user)
+
+#     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+#     def accept(self, request, pk=None):
+#         event = self.get_object()
+#         user = request.user
+        
+#         if user == event.creator:
+#             return Response({'error': 'You cannot accept your own event.'}, 
+#                           status=status.HTTP_400_BAD_REQUEST)
+        
+#         if event.accepted_by.filter(id=user.id).exists():
+#             return Response({'error': 'You have already accepted this event.'}, 
+#                           status=status.HTTP_400_BAD_REQUEST)
+        
+#         # Add donor to accepted_by
+#         event.accepted_by.add(user)
+#         event.save()
+        
+#         # Create donation record
+#         Donation.objects.create(
+#             donor=user,
+#             request=event,
+#             units_donated=1,  # Assuming 1 unit per acceptance
+#             is_verified=False  # Default to unverified
+#         )
+        
+#         # Send email to event creator
+#         self.send_acceptance_email(event, user)
+        
+#         return Response({'success': 'You have accepted to donate blood for this event.'}, 
+#                        status=status.HTTP_200_OK)
+    
+#     def send_acceptance_email(self, event, donor):
+#         subject = f"Blood Donation Accepted for Your Event"
+#         html_message = render_to_string('emails/donation_accepted.html', {
+#             'event': event,
+#             'donor': donor,
+#             'donor_profile': donor.profile if hasattr(donor, 'profile') else None
+#         })
+#         plain_message = strip_tags(html_message)
+#         from_email = 'noreply@blooddonation.com'
+#         to_email = event.creator.email
+        
+#         send_mail(
+#             subject,
+#             plain_message,
+#             from_email,
+#             [to_email],
+#             html_message=html_message,
+#             fail_silently=False,
+#         )
+
+
+
+# class DashboardView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         user = request.user
+#         dashboard = {}
+
+#         # Get user profile and blood type if available
+#         profile = getattr(user, 'profile', None)
+#         blood_type = profile.blood_type if profile else None
+#         dashboard['blood_type'] = blood_type
+
+#         # Recipient Dashboard Info
+#         if user.user_type in ['recipient', 'both']:
+#             recipient_requests = BloodRequest.objects.filter(
+#                 requester=user
+#             ).select_related('requester').order_by('-created_at')
+
+#             dashboard['total_requests'] = recipient_requests.count()
+#             dashboard['pending_requests'] = recipient_requests.filter(status='pending').count()
+#             dashboard['my_requests'] = BloodRequestSerializer(
+#                 recipient_requests[:10], many=True
+#             ).data
+
+#         # Donor Dashboard Info
+#         if user.user_type in ['donor', 'both'] and blood_type:
+#             donations = Donation.objects.filter(
+#                 donor=user
+#             ).select_related(
+#                 'donor', 'request', 'request__requester'
+#             ).order_by('-donation_date')
+
+#             verified_donations = donations.filter(is_verified=True)
+
+#             dashboard['completed_donations'] = verified_donations.count()
+#             dashboard['last_donation_date'] = (
+#                 verified_donations.first().donation_date if verified_donations.exists() else None
+#             )
+#             dashboard['donation_history'] = DonationSerializer(
+#                 donations[:10], many=True
+#             ).data
+
+#             # Available blood requests for this donor’s blood type
+#             available_requests = BloodRequest.objects.filter(
+#                 status='pending',
+#                 blood_type=blood_type
+#             ).exclude(requester=user).select_related('requester').order_by('-created_at')[:10]
+
+#             dashboard['available_requests'] = BloodRequestSerializer(
+#                 available_requests, many=True
+#             ).data
+
+#         return Response(dashboard)
+
+#     def post(self, request):
+#         user = request.user
+#         request_id = request.data.get('request_id')
+
+#         if not request_id:
+#             return Response({'error': 'Request ID required'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         try:
+#             with transaction.atomic():
+#                 blood_request = BloodRequest.objects.select_for_update().get(
+#                     id=request_id,
+#                     status='pending'
+#                 )
+
+#                 # Create the donation record
+#                 Donation.objects.create(
+#                     donor=user,
+#                     recipient=blood_request.requester,
+#                     blood_type=blood_request.blood_type,
+#                     request=blood_request,
+#                     status='accepted'
+#                 )
+
+#                 # Update the request status
+#                 blood_request.status = 'accepted'
+#                 blood_request.save(update_fields=['status'])
+
+#                 # Set donor availability to False
+#                 if user.is_available:
+#                     user.is_available = False
+#                     user.save(update_fields=['is_available'])
+
+#             return Response({'message': 'Request accepted successfully'})
+
+#         except BloodRequest.DoesNotExist:
+#             return Response({'error': 'Invalid request ID'}, status=status.HTTP_404_NOT_FOUND)
+ 

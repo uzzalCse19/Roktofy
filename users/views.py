@@ -84,8 +84,8 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     http_method_names = ['get', 'patch', 'head', 'options']  
     def get_queryset(self):
-       if getattr(self, 'swagger_fake_view', False):  # <- এই লাইন চেক করে Swagger থেকে আসছে কিনা
-           return UserProfile.objects.none()  # ডামি empty queryset
+       if getattr(self, 'swagger_fake_view', False):  
+           return UserProfile.objects.none()  
 
        return UserProfile.objects.filter(user=self.request.user)
 
@@ -179,6 +179,99 @@ def check_profile_complete(request):
         hasattr(user, 'profile') and bool(user.profile.blood_type)
     ])
     return Response({'is_profile_complete': is_complete})
+
+
+# admin_dashboard/views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from django.db.models import Count, Sum, Q, F
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models.functions import Coalesce
+from users.models import User, UserProfile
+from core.models import (BloodRequest, Donation, 
+                        BloodEvent, PaymentHistory, ContactMessage)
+
+class AdminDashboardView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        # System Stats
+        stats = {
+            'users': {
+                'total': User.objects.count(),
+                'new_today': User.objects.filter(date_joined__date=timezone.now()).count(),
+                'donors': User.objects.filter(Q(user_type='donor') | Q(user_type='both')).count(),
+            },
+            'requests': {
+                'total': BloodRequest.objects.count(),
+                'pending': BloodRequest.objects.filter(status='pending').count(),
+                'urgent': BloodRequest.objects.filter(urgency='high').count(),
+            },
+            'donations': {
+                'total': Donation.objects.count(),
+                'verified': Donation.objects.filter(is_verified=True).count(),
+            },
+            'payments': PaymentHistory.objects.aggregate(
+                total=Sum('amount', filter=Q(status='success'))
+            )['total'] or 0
+        }
+        return Response(stats)
+
+class AdminUserManagementView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        users = User.objects.annotate(
+            blood_type=F('profile__blood_type')
+        ).values('id', 'email', 'first_name', 'last_name', 
+                'is_active', 'user_type', 'blood_type')
+        return Response(users)
+    
+    def patch(self, request, user_id):
+        user = User.objects.get(id=user_id)
+        user.is_active = not user.is_active  # Toggle active status
+        user.save()
+        return Response({'status': 'success'})
+
+class AdminBloodRequestView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        requests = BloodRequest.objects.select_related('requester').annotate(
+            requester_email=F('requester__email')
+        ).values('id', 'blood_type', 'status', 'units_needed', 
+                'hospital', 'created_at', 'requester_email')
+        return Response(requests)
+    
+    def patch(self, request, req_id):
+        blood_request = BloodRequest.objects.get(id=req_id)
+        blood_request.status = request.data.get('status', blood_request.status)
+        blood_request.save()
+        return Response({'status': 'updated'})
+
+class AdminDonationView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        donations = Donation.objects.select_related(
+            'donor', 'request', 'event'
+        ).annotate(
+            donor_email=F('donor__email'),
+            blood_type=Coalesce(
+                F('request__blood_type'), 
+                F('event__blood_type')
+            )
+        ).values('id', 'donor_email', 'blood_type', 
+                'units_donated', 'donation_date', 'is_verified')
+        return Response(donations)
+    
+    def patch(self, request, donation_id):
+        donation = Donation.objects.get(id=donation_id)
+        donation.is_verified = not donation.is_verified  # Toggle verification
+        donation.save()
+        return Response({'status': 'verified' if donation.is_verified else 'unverified'})
 
 # class UserRegistrationView(generics.CreateAPIView):
 #     serializer_class = UserRegistrationSerializer
