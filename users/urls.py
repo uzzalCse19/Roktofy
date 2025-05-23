@@ -8,7 +8,9 @@ from .views import (
     AdminDashboardView,
     AdminUserManagementView,
     AdminBloodRequestView,
-    AdminDonationView
+    AdminDonationView,
+    AdminAuditLogView,
+    # AdminSystemSettingsView
 )
 
 router = DefaultRouter()
@@ -24,13 +26,31 @@ urlpatterns = [
     path('profile/update/', UserProfileUpdateView.as_view(), name='profile-update'),
     path('me/update/', UserUpdateView_two.as_view(), name='user-update'), 
     path('api/check-profile/', check_profile_complete, name='check-profile'),
-    path('admin/stats/', AdminDashboardView.as_view()),
-    path('admin/users/', AdminUserManagementView.as_view()),
-    path('admin/users/<int:user_id>/', AdminUserManagementView.as_view()),
-    path('admin/blood-requests/', AdminBloodRequestView.as_view()),
-    path('admin/blood-requests/<int:req_id>/', AdminBloodRequestView.as_view()),
-    path('admin/donations/', AdminDonationView.as_view()),
-    path('admin/donations/<int:donation_id>/', AdminDonationView.as_view()),
+    # path('admin/stats/', AdminDashboardView.as_view()),
+    # path('admin/users/', AdminUserManagementView.as_view()),
+    # path('admin/users/<int:user_id>/', AdminUserManagementView.as_view()),
+    # path('admin/blood-requests/', AdminBloodRequestView.as_view()),
+    # path('admin/blood-requests/<int:req_id>/', AdminBloodRequestView.as_view()),
+    # path('admin/donations/', AdminDonationView.as_view()),
+    # path('admin/donations/<int:donation_id>/', AdminDonationView.as_view()),
+    # Dashboard
+    path('admin/dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
+    
+    # User Management
+    path('admin/users/', AdminUserManagementView.as_view(), name='admin-users-list'),
+    path('admin/users/<int:user_id>/', AdminUserManagementView.as_view(), name='admin-user-detail'),
+    
+    # Blood Requests
+    path('admin/blood-requests/', AdminBloodRequestView.as_view(), name='admin-requests-list'),
+    path('admin/blood-requests/<int:req_id>/', AdminBloodRequestView.as_view(), name='admin-request-detail'),
+    
+    # Donations
+    path('admin/donations/', AdminDonationView.as_view(), name='admin-donations-list'),
+    path('admin/donations/<int:donation_id>/', AdminDonationView.as_view(), name='admin-donation-detail'),
+    
+    # System
+    # path('admin/settings/', AdminSystemSettingsView.as_view(), name='admin-settings'),
+    path('admin/audit-logs/', AdminAuditLogView.as_view(), name='admin-audit-logs'),
 ]
 
 

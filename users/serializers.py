@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import UserProfile
+from core.models import BloodEvent,BloodRequest,Donation
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer, UserSerializer as BaseUserSerializer
 
 User = get_user_model()
@@ -77,7 +78,7 @@ class UserSerializer(BaseUserSerializer):
     class Meta(BaseUserSerializer.Meta):
         ref_name = 'CustomUser'
         fields = ['id', 'email', 'first_name',
-                  'last_name', 'address', 'phone']
+                  'last_name', 'address', 'phone','is_staff']
 
 
 
@@ -145,6 +146,41 @@ class UserUpdateSerializer_two(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'user_type', 'age', 'address', 'last_donation_date', 'is_available']
+
+
+
+# new for Admin
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['is_active', 'user_type', 'first_name', 'last_name', 'phone', 'address']
+
+# serializers.py
+
+class AdminUserListSerializer(serializers.ModelSerializer):
+    blood_type = serializers.CharField(source='profile.blood_type', default='')
+    last_donation = serializers.DateField(source='last_donation_date', allow_null=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'first_name', 'last_name',
+            'is_active', 'user_type', 'blood_type',
+            'last_donation', 'date_joined', 'last_login'
+        ]
+
+class AdminBloodRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BloodRequest
+        fields = ['status', 'units_needed', 'hospital', 'location', 'urgency']
+
+class AdminDonationSerializer(serializers.ModelSerializer):
+    verification_notes = serializers.CharField(required=False)
+    
+    class Meta:
+        model = Donation
+        fields = ['is_verified', 'verification_notes', 'units_donated']
 
 # class UserRegistrationSerializer(serializers.ModelSerializer):
 #     password = serializers.CharField(write_only=True, min_length=8)

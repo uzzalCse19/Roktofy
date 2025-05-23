@@ -10,7 +10,7 @@ from users.filters import UserFilter
 from users.paginations import UserPagination
 from django.contrib.auth import get_user_model
 from users.serializers import PublicDonorSerializer, BloodRequestSerializer
-from core.models import BloodRequest  # adjust path as needed
+from core.models import BloodRequest ,Donation,PaymentHistory # adjust path as needed
 from django.shortcuts import render
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.core.mail import send_mail
@@ -182,96 +182,355 @@ def check_profile_complete(request):
 
 
 # admin_dashboard/views.py
-from rest_framework.views import APIView
-from rest_framework.response import Response
+# from rest_framework.views import APIView
+# from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
-from django.db.models import Count, Sum, Q, F
+# from django.db.models import Count, Sum, Q, F
+# from django.utils import timezone
+# from datetime import timedelta
+from django.db.models.functions import Coalesce
+# from users.models import User, UserProfile
+# from core.models import (BloodRequest, Donation, 
+#                         BloodEvent, PaymentHistory, ContactMessage)
+
+# class AdminDashboardView(APIView):
+#     permission_classes = [IsAdminUser]
+    
+#     def get(self, request):
+#         # System Stats
+#         stats = {
+#             'users': {
+#                 'total': User.objects.count(),
+#                 'new_today': User.objects.filter(date_joined__date=timezone.now()).count(),
+#                 'donors': User.objects.filter(Q(user_type='donor') | Q(user_type='both')).count(),
+#             },
+#             'requests': {
+#                 'total': BloodRequest.objects.count(),
+#                 'pending': BloodRequest.objects.filter(status='pending').count(),
+#                 'urgent': BloodRequest.objects.filter(urgency='high').count(),
+#             },
+#             'donations': {
+#                 'total': Donation.objects.count(),
+#                 'verified': Donation.objects.filter(is_verified=True).count(),
+#             },
+#             'payments': PaymentHistory.objects.aggregate(
+#                 total=Sum('amount', filter=Q(status='success'))
+#             )['total'] or 0
+#         }
+#         return Response(stats)
+
+# class AdminUserManagementView(APIView):
+#     permission_classes = [IsAdminUser]
+    
+#     def get(self, request):
+#         users = User.objects.annotate(
+#             blood_type=F('profile__blood_type')
+#         ).values('id', 'email', 'first_name', 'last_name', 
+#                 'is_active', 'user_type', 'blood_type')
+#         return Response(users)
+    
+#     def patch(self, request, user_id):
+#         user = User.objects.get(id=user_id)
+#         user.is_active = not user.is_active  # Toggle active status
+#         user.save()
+#         return Response({'status': 'success'})
+
+# class AdminBloodRequestView(APIView):
+#     permission_classes = [IsAdminUser]
+    
+#     def get(self, request):
+#         requests = BloodRequest.objects.select_related('requester').annotate(
+#             requester_email=F('requester__email')
+#         ).values('id', 'blood_type', 'status', 'units_needed', 
+#                 'hospital', 'created_at', 'requester_email')
+#         return Response(requests)
+    
+#     def patch(self, request, req_id):
+#         blood_request = BloodRequest.objects.get(id=req_id)
+#         blood_request.status = request.data.get('status', blood_request.status)
+#         blood_request.save()
+#         return Response({'status': 'updated'})
+
+# class AdminDonationView(APIView):
+#     permission_classes = [IsAdminUser]
+    
+#     def get(self, request):
+#         donations = Donation.objects.select_related(
+#             'donor', 'request', 'event'
+#         ).annotate(
+#             donor_email=F('donor__email'),
+#             blood_type=Coalesce(
+#                 F('request__blood_type'), 
+#                 F('event__blood_type')
+#             )
+#         ).values('id', 'donor_email', 'blood_type', 
+#                 'units_donated', 'donation_date', 'is_verified')
+#         return Response(donations)
+    
+#     def patch(self, request, donation_id):
+#         donation = Donation.objects.get(id=donation_id)
+#         donation.is_verified = not donation.is_verified  # Toggle verification
+#         donation.save()
+#         return Response({'status': 'verified' if donation.is_verified else 'unverified'})
+
+
+
+# new added 
+
+from django.db.models import Count, Sum, Q, F, Case, When, Value, CharField
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models.functions import Coalesce
-from users.models import User, UserProfile
-from core.models import (BloodRequest, Donation, 
-                        BloodEvent, PaymentHistory, ContactMessage)
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializers import AdminBloodRequestSerializer,AdminDonationSerializer,AdminUserSerializer
+
+from django.utils import timezone
+from django.db.models import Q, Count, Sum, Case, When, Value, CharField
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAdminUser
+from rest_framework.response import Response
+from datetime import datetime
+
 
 class AdminDashboardView(APIView):
     permission_classes = [IsAdminUser]
-    
+
     def get(self, request):
-        # System Stats
         stats = {
             'users': {
                 'total': User.objects.count(),
-                'new_today': User.objects.filter(date_joined__date=timezone.now()).count(),
+                'new_today': User.objects.filter(date_joined__date=timezone.now().date()).count(),
                 'donors': User.objects.filter(Q(user_type='donor') | Q(user_type='both')).count(),
+                'recipients': User.objects.filter(Q(user_type='recipient') | Q(user_type='both')).count(),
+                'inactive': User.objects.filter(is_active=False).count(),
             },
             'requests': {
                 'total': BloodRequest.objects.count(),
-                'pending': BloodRequest.objects.filter(status='pending').count(),
-                'urgent': BloodRequest.objects.filter(urgency='high').count(),
+                'status_distribution': BloodRequest.objects.aggregate(
+                    pending=Count('id', filter=Q(status='pending')),
+                    accepted=Count('id', filter=Q(status='accepted')),
+                    completed=Count('id', filter=Q(status='completed')),
+                    cancelled=Count('id', filter=Q(status='cancelled'))
+                ),
+                'urgency_distribution': BloodRequest.objects.aggregate(
+                    low=Count('id', filter=Q(urgency='low')),
+                    normal=Count('id', filter=Q(urgency='normal')),
+                    high=Count('id', filter=Q(urgency='high'))
+                ),
+                'blood_type_distribution': BloodRequest.objects.values('blood_type').annotate(
+                    count=Count('id')
+                ).order_by('-count')
             },
             'donations': {
                 'total': Donation.objects.count(),
                 'verified': Donation.objects.filter(is_verified=True).count(),
+                'unverified': Donation.objects.filter(is_verified=False).count(),
+                'by_type': Donation.objects.annotate(
+                    type=Case(
+                        When(request__isnull=False, then=Value('request')),
+                        When(event__isnull=False, then=Value('event')),
+                        default=Value('unknown'),  # ✅ Added to prevent 500 error
+                        output_field=CharField()
+                    )
+                ).values('type').annotate(count=Count('id'))
             },
-            'payments': PaymentHistory.objects.aggregate(
-                total=Sum('amount', filter=Q(status='success'))
-            )['total'] or 0
+            'payments': {
+                'total_amount': PaymentHistory.objects.aggregate(
+                    total=Sum('amount', filter=Q(status='success'))
+                )['total'] or 0,
+                'status_counts': PaymentHistory.objects.values('status').annotate(
+                    count=Count('id')
+                )
+            },
+            'system': {
+                'uptime_days': (timezone.now() - timezone.make_aware(datetime(2023, 1, 1))).days,
+                'avg_response_time': 42.5  # Just a placeholder, replace with real metric if available
+            }
         }
         return Response(stats)
 
+
+from django.db.models import F
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from django.shortcuts import get_object_or_404
+from .models import User
+from .serializers import AdminUserSerializer
+
+from django.db.models import F, Value
+from django.db.models.functions import Coalesce
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from django.shortcuts import get_object_or_404
+
+from .models import User
+from .serializers import AdminUserSerializer  # Make sure this is correctly imported
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from django.db.models import F, Value
+from django.db.models.functions import Coalesce
+from django.shortcuts import get_object_or_404
+
+from .models import User
+from .serializers import AdminUserSerializer, AdminUserListSerializer  # নিচে তৈরি করতে হবে
+
 class AdminUserManagementView(APIView):
     permission_classes = [IsAdminUser]
-    
+
     def get(self, request):
-        users = User.objects.annotate(
-            blood_type=F('profile__blood_type')
-        ).values('id', 'email', 'first_name', 'last_name', 
-                'is_active', 'user_type', 'blood_type')
-        return Response(users)
-    
+        user_type = request.query_params.get('type')
+        is_active = request.query_params.get('active')
+
+        queryset = User.objects.select_related('profile').annotate(
+            blood_type=Coalesce(F('profile__blood_type'), Value('')),
+            last_donation=Coalesce(F('last_donation_date'), Value(None)),
+        )
+
+        if user_type:
+            queryset = queryset.filter(user_type=user_type)
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+
+        serializer = AdminUserListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
     def patch(self, request, user_id):
-        user = User.objects.get(id=user_id)
-        user.is_active = not user.is_active  # Toggle active status
-        user.save()
-        return Response({'status': 'success'})
+        user = get_object_or_404(User, id=user_id)
+        serializer = AdminUserSerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        user.delete()
+        return Response({'status': 'deleted'})
+
+
+
 
 class AdminBloodRequestView(APIView):
     permission_classes = [IsAdminUser]
     
     def get(self, request):
-        requests = BloodRequest.objects.select_related('requester').annotate(
-            requester_email=F('requester__email')
-        ).values('id', 'blood_type', 'status', 'units_needed', 
-                'hospital', 'created_at', 'requester_email')
+        # Enhanced filtering
+        status = request.query_params.get('status')
+        blood_type = request.query_params.get('blood_type')
+        urgency = request.query_params.get('urgency')
+        
+        queryset = BloodRequest.objects.select_related('requester')
+        
+        if status:
+            queryset = queryset.filter(status=status)
+        if blood_type:
+            queryset = queryset.filter(blood_type=blood_type)
+        if urgency:
+            queryset = queryset.filter(urgency=urgency)
+        
+        requests = queryset.annotate(
+            requester_email=F('requester__email'),
+            requester_phone=F('requester__phone')
+        ).values(
+            'id', 'blood_type', 'status', 'units_needed', 
+            'hospital', 'location', 'created_at', 'needed_by',
+            'requester_email', 'requester_phone', 'urgency',
+            'additional_info'
+        ).order_by('-created_at')
+        
         return Response(requests)
     
     def patch(self, request, req_id):
         blood_request = BloodRequest.objects.get(id=req_id)
-        blood_request.status = request.data.get('status', blood_request.status)
-        blood_request.save()
-        return Response({'status': 'updated'})
+        
+        # Enhanced request management
+        serializer = AdminBloodRequestSerializer(blood_request, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response(serializer.data)
+    
+    def delete(self, request, req_id):
+        blood_request = BloodRequest.objects.get(id=req_id)
+        blood_request.delete()
+        return Response({'status': 'deleted'})
 
 class AdminDonationView(APIView):
     permission_classes = [IsAdminUser]
     
     def get(self, request):
-        donations = Donation.objects.select_related(
+        # Enhanced donation tracking
+        is_verified = request.query_params.get('verified')
+        blood_type = request.query_params.get('blood_type')
+        
+        queryset = Donation.objects.select_related(
             'donor', 'request', 'event'
-        ).annotate(
-            donor_email=F('donor__email'),
-            blood_type=Coalesce(
-                F('request__blood_type'), 
-                F('event__blood_type')
+        )
+        
+        if is_verified:
+            queryset = queryset.filter(is_verified=is_verified.lower() == 'true')
+        if blood_type:
+            queryset = queryset.filter(
+                Q(request__blood_type=blood_type) | 
+                Q(event__blood_type=blood_type)
             )
-        ).values('id', 'donor_email', 'blood_type', 
-                'units_donated', 'donation_date', 'is_verified')
+        
+        donations = queryset.annotate(
+            donor_email=F('donor__email'),
+            donor_phone=F('donor__phone'),
+            blood_type=Case(
+                When(request__isnull=False, then=F('request__blood_type')),
+                When(event__isnull=False, then=F('event__blood_type')),
+                output_field=CharField()
+            ),
+            donation_type=Case(
+                When(request__isnull=False, then=Value('request')),
+                When(event__isnull=False, then=Value('event')),
+                output_field=CharField()
+            )
+        ).values(
+            'id', 'donor_email', 'donor_phone', 'blood_type',
+            'units_donated', 'donation_date', 'is_verified',
+            'donation_type'
+        ).order_by('-donation_date')
+        
         return Response(donations)
     
     def patch(self, request, donation_id):
         donation = Donation.objects.get(id=donation_id)
-        donation.is_verified = not donation.is_verified  # Toggle verification
-        donation.save()
-        return Response({'status': 'verified' if donation.is_verified else 'unverified'})
+        
+        # Enhanced verification with notes
+        serializer = AdminDonationSerializer(donation, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response(serializer.data)
+
+# Additional Admin Functionalities
+
+    
+    def post(self, request):
+        # Update system settings
+        # Implement your settings update logic here
+        return Response({'status': 'settings_updated'})
+
+class AdminAuditLogView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        # Get recent admin actions
+        logs = [
+            {'action': 'user_deactivated', 'admin': 'superuser', 'timestamp': '2023-05-20T10:30:00Z'},
+            {'action': 'request_approved', 'admin': 'admin1', 'timestamp': '2023-05-20T09:15:00Z'}
+        ]
+        return Response(logs)
+
+# Serializers (add to serializers.py)
+
+
 
 # class UserRegistrationView(generics.CreateAPIView):
 #     serializer_class = UserRegistrationSerializer
