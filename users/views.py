@@ -127,18 +127,27 @@ class DonorListView(generics.ListAPIView):
     ordering = ['-last_donation_date']
     search_fields = ['first_name', 'last_name', 'email', 'address']
 
+    # def get_queryset(self):
+    #     return User.objects.filter(
+    #         is_available=True,
+    #         profile__blood_type__isnull=False
+    #     ).filter(
+    #         Q(user_type='donor') | Q(user_type='both')
+    #     ).select_related('profile').only(
+    #         'id', 'first_name', 'last_name', 'email', 'phone', 'address', 
+    #         'last_donation_date', 'is_available',
+    #         'profile__blood_type'
+        # )
+
+
     def get_queryset(self):
         return User.objects.filter(
-            is_available=True,
-            profile__blood_type__isnull=False
+           is_available=True,
+           profile__blood_type__isnull=False,
+        #    last_donation_date__isnull=False
         ).filter(
-            Q(user_type='donor') | Q(user_type='both')
-        ).select_related('profile').only(
-            'id', 'first_name', 'last_name', 'email', 'phone', 'address', 
-            'last_donation_date', 'is_available',
-            'profile__blood_type'
-        )
-
+           Q(user_type='donor') | Q(user_type='both')
+        ).select_related('profile')
 
 # new added 
 
