@@ -115,17 +115,3 @@ class ContactMessage(models.Model):
     def __str__(self):
         return f"{self.subject} from {self.name}"
 
-# class Donation(models.Model):
-#     donor = models.ForeignKey( User, on_delete=models.CASCADE, related_name='donations')
-#     request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='donations')
-#     donation_date = models.DateTimeField(auto_now_add=True)
-#     units_donated = models.PositiveIntegerField(default=1)
-#     is_verified = models.BooleanField(default=True)
-
-#     def __str__(self):
-#         return f"{self.donor.email} donated {self.units_donated} unit(s)"
-
-#     class Meta:
-#         unique_together = ('donor', 'request')  
-#         ordering = ['-donation_date']
-

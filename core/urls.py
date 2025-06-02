@@ -18,14 +18,5 @@ urlpatterns = router.urls + [
     path('contact/', ContactMessageCreateView.as_view(), name='contact-message'),
 ]
 
-    # path('dashboard/', DashboardView.as_view(), name='dashboard'),
-    # path("initiate/payment/", initiate_payment, name="initiate/payment"),
-    # path('stats/dashboard/', dashboard_stats, name='dashboard-stats'),
-    # path('events/', BloodEventListCreateView.as_view(), name='event-list-create'),
-    # path('events/accept/', AcceptBloodEventView.as_view(), name='accept-event'),
-    # path('donations/history/', DonationHistoryView.as_view(), name='donation-history'),
-    # path('public-stats/', public_stats, name='public-stats'),      # No login needed
-    # path('dashboard/', DashboardView.as_view(), name='dashboard'),
-    # router.register(r'donations', DonationViewSet, basename='donations')
-    # router.register(r'blood-events', BloodEventViewSet, basename='blood-events')
+
  
