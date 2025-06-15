@@ -93,7 +93,6 @@ WSGI_APPLICATION = 'roktofy.wsgi.app'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'https://roktofy-frontend.vercel.app',
-    'https://roktofy-frontend-oa9pilkxi-md-uzzals-projects.vercel.app',
 ]
 
 INTERNAL_IPS = [
