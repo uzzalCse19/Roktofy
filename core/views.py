@@ -22,10 +22,6 @@ from rest_framework.generics import ListAPIView
 
 User = get_user_model()
 
-
-
-
-
 class BloodRequestViewSet(viewsets.ModelViewSet):
     queryset = BloodRequest.objects.all()
     serializer_class = BloodRequestSerializer
