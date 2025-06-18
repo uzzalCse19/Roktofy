@@ -436,7 +436,6 @@ from sslcommerz_lib import SSLCOMMERZ
 @api_view(['POST'])
 def initiate_payment(request):
     user=request.user
-    print(user)
     amount=request.data.get("amount")
     print(request.data)
     settings = { 'store_id': 'phima68242c124ae93', 'store_pass': 'phima68242c124ae93@ssl', 'issandbox': True }
@@ -444,7 +443,8 @@ def initiate_payment(request):
     post_body = {}
     post_body['total_amount'] = amount
     post_body['currency'] = "BDT"
-    post_body['tran_id'] = str(uuid.uuid4())
+    # post_body['tran_id'] = str(uuid.uuid4())
+    post_body['tran_id'] = f"{uuid.uuid4()}__{user.id}"
     post_body['success_url'] = f"{main_settings.BACKEND_URL}/api/payment/success/"
     post_body['fail_url'] = f"{main_settings.BACKEND_URL}/api/payment/fail/"
     post_body['cancel_url'] = f"{main_settings.BACKEND_URL}/api/payment/cancel/"
@@ -473,55 +473,128 @@ def initiate_payment(request):
 
 
 # views.py
+# @api_view(['POST'])
+# def payment_success(request):
+#     # Get data from SSLCommerz response
+#     payment_data = request.data
+    
+#     # Create payment history record
+#     PaymentHistory.objects.create(
+#         user=request.user,
+#         amount=payment_data.get('amount'),
+#         transaction_id=payment_data.get('tran_id'),
+#         status='success',
+#         first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
+#         last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
+#         email=payment_data.get('cus_email'),
+#         phone=payment_data.get('cus_phone')
+#     )
+    
+#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
+
 @api_view(['POST'])
 def payment_success(request):
-    # Get data from SSLCommerz response
     payment_data = request.data
-    
-    # Create payment history record
+    tran_id = payment_data.get('tran_id', '')
+    user_id = tran_id.split('__')[-1]
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
     PaymentHistory.objects.create(
-        user=request.user,
+        user=user,
         amount=payment_data.get('amount'),
-        transaction_id=payment_data.get('tran_id'),
+        transaction_id=tran_id,
         status='success',
-        first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
-        last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
-        email=payment_data.get('cus_email'),
-        phone=payment_data.get('cus_phone')
+        first_name=user.first_name or '',
+        last_name=user.last_name or '',
+        email=user.email,
+        phone=user.phone
     )
-    
+
     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
+
+
+# @api_view(['POST'])
+# def payment_fail(request):
+#     payment_data = request.data
+#     PaymentHistory.objects.create(
+#         user=request.user,
+#         amount=payment_data.get('amount'),
+#         transaction_id=payment_data.get('tran_id'),
+#         status='failed',
+#         first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
+#         last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
+#         email=payment_data.get('cus_email'),
+#         phone=payment_data.get('cus_phone')
+#     )
+#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/fail/")
 
 @api_view(['POST'])
 def payment_fail(request):
     payment_data = request.data
+    tran_id = payment_data.get('tran_id', '')
+    user_id = tran_id.split('__')[-1]
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
     PaymentHistory.objects.create(
-        user=request.user,
+        user=user,
         amount=payment_data.get('amount'),
-        transaction_id=payment_data.get('tran_id'),
+        transaction_id=tran_id,
         status='failed',
-        first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
-        last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
-        email=payment_data.get('cus_email'),
-        phone=payment_data.get('cus_phone')
+        first_name=user.first_name or '',
+        last_name=user.last_name or '',
+        email=user.email,
+        phone=user.phone
     )
+
     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/fail/")
+
+
+# @api_view(['POST'])
+# def payment_cancel(request):
+#     payment_data = request.data
+#     PaymentHistory.objects.create(
+#         user=request.user,
+#         amount=payment_data.get('amount'),
+#         transaction_id=payment_data.get('tran_id'),
+#         status='canceled',
+#         first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
+#         last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
+#         email=payment_data.get('cus_email'),
+#         phone=payment_data.get('cus_phone')
+#     )
+#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
 
 @api_view(['POST'])
 def payment_cancel(request):
     payment_data = request.data
-    PaymentHistory.objects.create(
-        user=request.user,
-        amount=payment_data.get('amount'),
-        transaction_id=payment_data.get('tran_id'),
-        status='canceled',
-        first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
-        last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
-        email=payment_data.get('cus_email'),
-        phone=payment_data.get('cus_phone')
-    )
-    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
+    tran_id = payment_data.get('tran_id', '')
+    user_id = tran_id.split('__')[-1]
 
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+    PaymentHistory.objects.create(
+        user=user,
+        amount=payment_data.get('amount'),
+        transaction_id=tran_id,
+        status='canceled',
+        first_name=user.first_name or '',
+        last_name=user.last_name or '',
+        email=user.email,
+        phone=user.phone
+    )
+
+    return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
 
 
 
@@ -531,5 +604,4 @@ class PaymentHistoryView(ListAPIView):
     
     def get_queryset(self):
         return PaymentHistory.objects.filter(user=self.request.user).order_by('-timestamp')
-
 
