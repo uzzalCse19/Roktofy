@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
-
+from rest_framework.permissions import AllowAny
 from users.serializers import UserProfileSerializer,DonorListSerializer,UserSerializer,PublicDonorSerializer, BloodRequestSerializer
 from users.models import User, UserProfile
 from users.permissions import IsVerifiedUser
@@ -121,6 +121,7 @@ class RequestBloodView(generics.CreateAPIView):
 
 class DonorListView(generics.ListAPIView):
     serializer_class = DonorListSerializer
+    permission_classes = [AllowAny]  
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = DonorFilter
     ordering_fields = ['last_donation_date', 'profile__blood_type', 'first_name']
