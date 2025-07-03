@@ -117,7 +117,24 @@ class RequestBloodView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(requester=self.request.user)
+# from users.paginations import StandardResultsSetPagination
+# class DonorListView(generics.ListAPIView):
+#     serializer_class = DonorListSerializer
+#     permission_classes = [AllowAny]
+#     pagination_class = StandardResultsSetPagination
+#     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+#     filterset_class = DonorFilter
+#     ordering_fields = ['last_donation_date', 'profile__blood_type', 'first_name']
+#     ordering = ['-last_donation_date']
+#     search_fields = ['first_name', 'last_name', 'email', 'address']
 
+#     def get_queryset(self):
+#         return User.objects.filter(
+#             is_available=True,
+#             profile__blood_type__isnull=False,
+#         ).filter(
+#             Q(user_type='donor') | Q(user_type='both')
+#         ).select_related('profile')
 
 class DonorListView(generics.ListAPIView):
     serializer_class = DonorListSerializer

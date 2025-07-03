@@ -55,7 +55,7 @@ class DonationSerializer(serializers.ModelSerializer):
     request_info = serializers.SerializerMethodField(read_only=True)
     event_info = serializers.SerializerMethodField(read_only=True)
     
-    # ✅ Add this line to show blood_type in response
+    #  Add this line to show blood_type in response
     blood_type = serializers.SerializerMethodField(read_only=True)
 
     request = serializers.PrimaryKeyRelatedField(
@@ -78,7 +78,7 @@ class DonationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'donor', 'request', 'event', 'request_info', 'event_info',
             'units_donated', 'donation_date', 'is_verified',
-            'blood_type'  # ✅ Include here
+            'blood_type'  #  Include here
         ]
         read_only_fields = ['donation_date', 'is_verified', 'donor', 'request_info', 'event_info', 'blood_type']
 
@@ -114,7 +114,7 @@ class DonationSerializer(serializers.ModelSerializer):
             'status': obj.event.status
         }
 
-    # ✅ Method to return blood_type from request or event
+    # Method to return blood_type from request or event
     def get_blood_type(self, obj):
         if obj.request and obj.request.blood_type:
             return obj.request.blood_type

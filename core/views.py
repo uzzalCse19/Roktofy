@@ -294,14 +294,48 @@ class DashboardView(APIView):
 
 
 # Public statistics endpoint (no authentication required)
+# class PublicStatsView(APIView):
+#     permission_classes = [AllowAny]
+
+#     def get(self, request):
+#         stats = {
+#             'total_users': User.objects.count(),
+#             'total_donors': User.objects.filter(donations__isnull=False).distinct().count(),
+#             'total_recipients': User.objects.filter(blood_requests__isnull=False).distinct().count(),
+#             'total_blood_requests': BloodRequest.objects.count(),
+#             'completed_donations': Donation.objects.filter(is_verified=True).count(),
+#             'pending_requests': BloodRequest.objects.filter(status='pending').count(),
+#             'upcoming_events': BloodEvent.objects.filter(
+#                 required_date__gte=timezone.now().date(),
+#                 status='pending'
+#             ).count()
+#         }
+#         return Response(stats)
+
+# views.py
+from django.db.models import Q          # ⬅️ নতুন ইমপোর্ট
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.utils import timezone
+
 class PublicStatsView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
         stats = {
             'total_users': User.objects.count(),
-            'total_donors': User.objects.filter(donations__isnull=False).distinct().count(),
-            'total_recipients': User.objects.filter(blood_requests__isnull=False).distinct().count(),
+
+            # ⬇️ Donors = (user_type in ['donor', 'both']) OR donated before
+            'total_donors': User.objects.filter(
+                Q(user_type__in=['donor', 'both']) | Q(donations__isnull=False)
+            ).distinct().count(),
+
+            # (একই যুক্তি চাইলে recipients‑এও প্রয়োগ করতে পারো)
+            'total_recipients': User.objects.filter(
+                Q(user_type__in=['recipient', 'both']) | Q(blood_requests__isnull=False)
+            ).distinct().count(),
+
             'total_blood_requests': BloodRequest.objects.count(),
             'completed_donations': Donation.objects.filter(is_verified=True).count(),
             'pending_requests': BloodRequest.objects.filter(status='pending').count(),
@@ -311,6 +345,7 @@ class PublicStatsView(APIView):
             ).count()
         }
         return Response(stats)
+
 
 # Authenticated user dashboard
 class UserDashboardView(APIView):
@@ -470,28 +505,6 @@ def initiate_payment(request):
         return Response({"payment_url": response['GatewayPageURL']})
     return Response({"error": "Payment initiation failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-
-
-# views.py
-# @api_view(['POST'])
-# def payment_success(request):
-#     # Get data from SSLCommerz response
-#     payment_data = request.data
-    
-#     # Create payment history record
-#     PaymentHistory.objects.create(
-#         user=request.user,
-#         amount=payment_data.get('amount'),
-#         transaction_id=payment_data.get('tran_id'),
-#         status='success',
-#         first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
-#         last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
-#         email=payment_data.get('cus_email'),
-#         phone=payment_data.get('cus_phone')
-#     )
-    
-#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
-
 @api_view(['POST'])
 def payment_success(request):
     payment_data = request.data
@@ -516,21 +529,6 @@ def payment_success(request):
 
     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/success")
 
-
-# @api_view(['POST'])
-# def payment_fail(request):
-#     payment_data = request.data
-#     PaymentHistory.objects.create(
-#         user=request.user,
-#         amount=payment_data.get('amount'),
-#         transaction_id=payment_data.get('tran_id'),
-#         status='failed',
-#         first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
-#         last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
-#         email=payment_data.get('cus_email'),
-#         phone=payment_data.get('cus_phone')
-#     )
-#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/fail/")
 
 @api_view(['POST'])
 def payment_fail(request):
@@ -557,20 +555,6 @@ def payment_fail(request):
     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/fail/")
 
 
-# @api_view(['POST'])
-# def payment_cancel(request):
-#     payment_data = request.data
-#     PaymentHistory.objects.create(
-#         user=request.user,
-#         amount=payment_data.get('amount'),
-#         transaction_id=payment_data.get('tran_id'),
-#         status='canceled',
-#         first_name=payment_data.get('cus_name', '').split()[0] if payment_data.get('cus_name') else '',
-#         last_name=' '.join(payment_data.get('cus_name', '').split()[1:]) if payment_data.get('cus_name') else '',
-#         email=payment_data.get('cus_email'),
-#         phone=payment_data.get('cus_phone')
-#     )
-#     return HttpResponseRedirect(f"{main_settings.FRONTEND_URL}/payment/cancel/")
 
 @api_view(['POST'])
 def payment_cancel(request):
