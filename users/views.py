@@ -121,7 +121,7 @@ class RequestBloodView(generics.CreateAPIView):
 
 class DonorListView(generics.ListAPIView):
     serializer_class = DonorListSerializer
-    # permission_classes = [AllowAny]  
+    permission_classes = [AllowAny]  
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = DonorFilter
     ordering_fields = ['last_donation_date', 'profile__blood_type', 'first_name']
