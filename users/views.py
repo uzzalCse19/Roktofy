@@ -249,7 +249,7 @@ class AdminDashboardView(APIView):
         }
         return Response(stats)
 
-
+from users.serializers import AdminUserListSerializer
 
 class AdminUserManagementView(APIView):
     permission_classes = [IsAdminUser]
